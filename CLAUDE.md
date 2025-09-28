@@ -1,4 +1,4 @@
-# CLAUDE.md
+c# CLAUDE.md
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
@@ -8,7 +8,7 @@ This repository contains the Madlan.co.il AI Enhancement Demo - a React-based re
 
 **This is a unified Next.js application** that combines both homepage and property search functionality:
 - **Homepage** (`/`): Main Madlan homepage clone with property listings, projects, and blog sections
-- **Haifa** (`/haifa`): Property search results page specifically for Haifa listings with map integration
+- **Search Results** (`/search-results`): Property search results page with map integration and filtering
 - **Navigation**: Seamless routing between pages with search functionality
 
 Original separate applications are preserved in `reference/static-pages-src/` for reference.
@@ -36,7 +36,7 @@ The main application uses npm as the package manager and includes Turbopack for 
 - **Language**: TypeScript
 - **Styling**: Tailwind CSS with custom RTL support for Hebrew
 - **UI Components**: Radix UI primitives (Homepage), Lucide React icons
-- **Maps**: React Leaflet for Haifa project
+- **Maps**: Mapbox for interactive property maps
 - **Code Quality**: Biome for formatting and linting, ESLint for additional rules
 
 ### Project Structure
@@ -44,7 +44,7 @@ The main application uses npm as the package manager and includes Turbopack for 
 ├── src/                    # 🎯 MAIN APPLICATION SOURCE
 │   ├── app/               # Next.js app router pages
 │   │   ├── page.tsx       # Homepage (/)
-│   │   └── haifa/         # Haifa search page (/haifa)
+│   │   └── search-results/ # Search results page (/search-results)
 │   ├── components/        # Shared UI components
 │   │   ├── Header.tsx     # Main site header
 │   │   ├── Footer.tsx     # Site footer
@@ -52,7 +52,10 @@ The main application uses npm as the package manager and includes Turbopack for 
 │   │   ├── PropertyCard*.tsx    # Property listing cards
 │   │   ├── FilterBar.tsx        # Search filters
 │   │   └── Map.tsx              # Interactive property map
-│   ├── data/             # Property data and interfaces
+│   ├── data/             # Property data (JSON files) and DAL
+│   │   ├── dal/          # Data Access Layer
+│   │   ├── properties.json # Property listings data
+│   │   └── projects.json   # Project listings data
 │   └── lib/              # Utility functions
 ├── reference/            # Reference materials and original sources
 │   ├── docs/            # Project documentation
@@ -75,10 +78,10 @@ The main application uses npm as the package manager and includes Turbopack for 
 
 ### Key Components
 - **Property Cards**: Consistent property listing display across both projects
-- **Map Integration**: Interactive property map using React Leaflet (Haifa only)
+- **Map Integration**: Interactive property map using Mapbox
 - **RTL Layout**: Full Hebrew RTL support with proper text direction
 - **Responsive Design**: Mobile-first approach with breakpoint-specific layouts
-- **Mock Data**: Local property data stored in TypeScript files
+- **Data Layer**: Property and project data stored in JSON files with TypeScript DAL
 
 ## Important Implementation Details
 
@@ -109,9 +112,9 @@ interface Property {
 
 ### Current Features
 - **Unified Navigation**: Seamless routing between homepage and property search
-- **Search Integration**: Homepage search button navigates to Haifa results page
+- **Search Integration**: Homepage search button navigates to search results page
 - **Pixel-Perfect UI**: Exact visual match with original Madlan design
-- **Interactive Map**: Property locations displayed on React Leaflet map
+- **Interactive Map**: Property locations displayed on Mapbox map
 - **Responsive Design**: Optimized for desktop, tablet, and mobile devices
 
 ### Planned AI Chat Integration

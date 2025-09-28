@@ -15,9 +15,9 @@ export default function HeroSection() {
 
   const handleSearch = () => {
     if (location.trim()) {
-      router.push(`/haifa?location=${encodeURIComponent(location)}&type=${searchType}`);
+      router.push(`/search-results?location=${encodeURIComponent(location)}&type=${searchType}`);
     } else {
-      router.push(`/haifa?type=${searchType}`);
+      router.push(`/search-results?type=${searchType}`);
     }
   };
 

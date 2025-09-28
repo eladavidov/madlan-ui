@@ -1,0 +1,35 @@
+[
+  {
+    "id": "p1",
+    "name": "שלמה המלך 4",
+    "location": "רמת רמז",
+    "developer": "חברת אזורים",
+    "minPrice": 2400000,
+    "maxPrice": 3200000,
+    "roomsRange": "4-5",
+    "image": "https://ext.same-assets.com/3745260647/483857063.jpeg",
+    "isNew": true
+  },
+  {
+    "id": "p2",
+    "name": "שושנה דמארי 6",
+    "location": "קרית ביאליק",
+    "developer": "רוטשטיין נדל״ן",
+    "minPrice": 1800000,
+    "maxPrice": 2600000,
+    "roomsRange": "3-5",
+    "image": "https://ext.same-assets.com/3745260647/2031379078.jpeg",
+    "isNew": true
+  },
+  {
+    "id": "p3",
+    "name": "שבירו חיפה",
+    "location": "נווה שאנן",
+    "developer": "שבירו",
+    "minPrice": 2200000,
+    "maxPrice": 3500000,
+    "roomsRange": "3-5",
+    "image": "https://ext.same-assets.com/3745260647/536686463.jpeg",
+    "isNew": true
+  }
+]
