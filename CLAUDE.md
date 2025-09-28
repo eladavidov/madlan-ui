@@ -11,7 +11,7 @@ This repository contains the Madlan.co.il AI Enhancement Demo - a React-based re
 - **Haifa** (`/haifa`): Property search results page specifically for Haifa listings with map integration
 - **Navigation**: Seamless routing between pages with search functionality
 
-Original separate applications are preserved in `static-pages-src/` and `original-sources/` for reference.
+Original separate applications are preserved in `reference/static-pages-src/` for reference.
 
 ## Development Commands
 
@@ -25,15 +25,7 @@ npm run format       # Format code with Biome
 ```
 
 ### Original Reference Projects (for development reference only):
-```bash
-# Homepage reference
-cd static-pages-src/Homepage
-npm run dev          # Start on http://localhost:3000
-
-# Haifa reference  
-cd static-pages-src/Haifa
-npm run dev          # Start on http://localhost:3000
-```
+The original reference projects are preserved in `reference/static-pages-src/` but contain only build artifacts for historical reference.
 
 The main application uses npm as the package manager and includes Turbopack for faster development builds.
 
@@ -62,18 +54,23 @@ The main application uses npm as the package manager and includes Turbopack for 
 │   │   └── Map.tsx              # Interactive property map
 │   ├── data/             # Property data and interfaces
 │   └── lib/              # Utility functions
-├── docs/                 # Project documentation
+├── reference/            # Reference materials and original sources
+│   ├── docs/            # Project documentation
+│   ├── screenshots/     # Comparison screenshots and testing
+│   └── static-pages-src/ # Original reference projects
+│       ├── Homepage/    # Original homepage source
+│       └── Haifa/      # Original Haifa page source
 ├── package.json          # Dependencies and scripts
 ├── next.config.js        # Next.js configuration
 ├── tailwind.config.ts    # Tailwind CSS configuration
 ├── tsconfig.json         # TypeScript configuration
-├── node_modules/         # Dependencies
-├── static-pages-src/     # Original reference projects
-│   ├── Homepage/         # Original homepage source
-│   └── Haifa/           # Original Haifa page source
-├── original-sources/     # Additional reference sources
-└── screenshots/         # Comparison screenshots and testing
-    └── backup/         # Previous screenshot versions
+├── eslint.config.mjs     # ESLint configuration
+├── biome.json           # Biome formatter configuration
+├── components.json      # UI components configuration
+├── postcss.config.mjs   # PostCSS configuration
+├── netlify.toml         # Netlify deployment configuration
+├── CLAUDE.md           # Project instructions for Claude Code
+└── node_modules/       # Dependencies (generated)
 ```
 
 ### Key Components
