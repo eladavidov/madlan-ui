@@ -7,11 +7,12 @@ import PropertyCard from '@/components/PropertyCardHaifa'
 import { Map } from '@/components/Map'
 import Footer from '@/components/Footer'
 import { properties, projects } from '@/data/properties'
-import { ChevronLeft, ChevronRight, Grid3X3, List } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Grid3X3, List, MapPin, X } from 'lucide-react'
 
 export default function Home() {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
   const [currentPage, setCurrentPage] = useState(1)
+  const [showMobileMap, setShowMobileMap] = useState(false)
   const propertiesPerPage = 20
   const totalProperties = 4719 // As shown in the original site
 
@@ -20,7 +21,40 @@ export default function Home() {
       <Header />
       <FilterBar />
 
-      <div className="flex h-[calc(100vh-128px)]">
+      {/* Map Toggle Button for Mobile - appears only on small screens */}
+      <div className="lg:hidden bg-white border-b border-gray-200">
+        <div className="container mx-auto px-4 py-3">
+          <button
+            onClick={() => setShowMobileMap(true)}
+            className="flex items-center gap-2 px-4 py-2 madlan-green-bg text-white rounded-lg hover:opacity-90 transition w-full justify-center"
+          >
+            <MapPin className="h-5 w-5" />
+            <span>הצג מפה</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Mobile Map Overlay */}
+      {showMobileMap && (
+        <div className="fixed inset-0 z-50 lg:hidden">
+          <div className="absolute inset-0 bg-white">
+            {/* Close button */}
+            <button
+              onClick={() => setShowMobileMap(false)}
+              className="absolute top-4 right-4 z-10 p-2 bg-white rounded-full shadow-lg hover:shadow-xl transition"
+            >
+              <X className="h-6 w-6 text-gray-600" />
+            </button>
+
+            {/* Fullscreen map */}
+            <div className="w-full h-full">
+              <Map />
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="flex h-[calc(100vh-192px)] lg:h-[calc(100vh-128px)]">
         {/* Properties Section - Left Side (60%) */}
         <div className="w-full lg:w-3/5 h-full overflow-y-auto bg-gray-50">
           {/* Results Header */}
