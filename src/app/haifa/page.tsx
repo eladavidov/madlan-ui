@@ -21,12 +21,7 @@ export default function Home() {
       <FilterBar />
 
       <div className="flex h-[calc(100vh-128px)]">
-        {/* Map Section - Left Side (40%) */}
-        <div className="hidden lg:block w-2/5 h-full">
-          <Map />
-        </div>
-
-        {/* Properties Section - Right Side (60%) */}
+        {/* Properties Section - Left Side (60%) */}
         <div className="w-full lg:w-3/5 h-full overflow-y-auto bg-gray-50">
           {/* Results Header */}
           <div className="bg-white px-4 py-3 border-b border-gray-200 sticky top-0 z-30">
@@ -155,6 +150,11 @@ export default function Home() {
               </p>
             </div>
           </div>
+        </div>
+
+        {/* Map Section - Right Side (40%) */}
+        <div className="hidden lg:block w-2/5 h-full">
+          <Map />
         </div>
       </div>
 
