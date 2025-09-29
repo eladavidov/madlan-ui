@@ -17,12 +17,62 @@ Original separate applications are preserved in `reference/static-pages-src/` fo
 
 ### Main Application (run from root directory):
 ```bash
-npm run dev          # Start development server on http://localhost:3000 with Turbopack
+npm run dev          # Start development server (typically http://localhost:3001) with Turbopack
 npm run build        # Build for production
 npm run start        # Start production server
 npm run lint         # Run TypeScript check and Next.js ESLint
 npm run format       # Format code with Biome
 ```
+
+## 🔗 Testing Links (Development Server)
+
+**Always test changes using these links after making modifications:**
+
+### Primary Pages:
+- **Homepage (Main/Default)**: http://localhost:3001
+  - Test: AI chat button, hero section, property listings, navigation
+- **Search Results Page**: http://localhost:3001/search-results
+  - Test: Property search, map integration, filters
+- **Search Results with Sample Query**: http://localhost:3001/search-results?location=חיפה&type=buy
+  - Test: Pre-populated search results
+
+### Testing Workflow:
+**MANDATORY: Use Chrome MCP to verify ALL changes before declaring completion**
+
+1. **After ANY UI change** → Use Chrome MCP to test: http://localhost:3001
+   - Take screenshot to verify visual layout
+   - Test interactive elements (buttons, inputs, navigation)
+   - Verify responsive behavior at different screen sizes
+
+2. **After search/results changes** → Test: http://localhost:3001/search-results
+   - Verify map integration and property filtering
+   - Test search functionality with sample queries
+
+3. **After AI chat changes** → Test AI chat functionality on: http://localhost:3001
+   - Click "שוחח עם AI" button to open chat panel
+   - Verify 33% right-side layout with 67% main content on left
+   - Test resizable splitter (drag between 30%-80% width range)
+   - Test closing chat panel (button changes to "סגור צ'אט")
+   - Verify Hebrew RTL layout and sample questions display
+   - Take screenshots of both open and closed states
+
+4. **After responsive changes** → Test all links at different screen sizes:
+   - **Desktop (>1024px)**: 67% main, 33% chat with resizable splitter
+   - **Tablet (768-1024px)**: 60% main, 40% chat with resizable splitter
+   - **Mobile (<768px)**: Collapsible bottom chat panel with drag-to-resize
+   - Use Chrome MCP resize_page or evaluate_script to test breakpoints
+
+**🚨 CRITICAL: Never announce task completion without Chrome MCP verification**
+
+### 📋 MANDATORY: Always End Responses with Testing Links
+**When completing any task, ALWAYS end your response with these testing links:**
+
+#### 🔗 Test Your Changes:
+- **Homepage (Main)**: http://localhost:3001
+- **Search Results**: http://localhost:3001/search-results
+- **Search with Sample Data**: http://localhost:3001/search-results?location=חיפה&type=buy
+
+**This should be the LAST part of every response after implementing changes.**
 
 ### Original Reference Projects (for development reference only):
 The original reference projects are preserved in `reference/static-pages-src/` but contain only build artifacts for historical reference.
@@ -58,6 +108,7 @@ The main application uses npm as the package manager and includes Turbopack for 
 │   │   └── projects.json   # Project listings data
 │   └── lib/              # Utility functions
 ├── reference/            # Reference materials and original sources
+│   ├── chat-ux-demo.html # UI demo and reference file
 │   ├── docs/            # Project documentation
 │   ├── screenshots/     # Comparison screenshots and testing
 │   └── static-pages-src/ # Original reference projects
@@ -116,13 +167,29 @@ interface Property {
 - **Pixel-Perfect UI**: Exact visual match with original Madlan design
 - **Interactive Map**: Property locations displayed on Mapbox map
 - **Responsive Design**: Optimized for desktop, tablet, and mobile devices
+- **✅ AI Chat Panel**: Fully implemented and tested chat interface that:
+  - Slides in from the right side (33% width on desktop)
+  - Integrated layout (not overlay) with main content on left (67% width)
+  - **✅ Resizable Splitter**: Drag-to-resize between 30%-80% width range
+  - Shows sample Hebrew property search queries with RTL layout
+  - Professional header with close button ("סגור צ'אט" when open)
+  - Interactive sample questions and chat input field
+  - Smooth transitions and hover effects on splitter
+  - **✅ Verified with Chrome MCP**: All functionality tested and working
 
-### Planned AI Chat Integration
-The project is designed to integrate an AI chat panel that:
-- Slides in from the right side (33% width on desktop)
-- Shows sample Hebrew property search queries
-- Filters and updates property results based on conversation
-- Maintains responsive behavior across all screen sizes
+### Responsive Design Implementation
+- **✅ Desktop Layout** (>1024px): 67% main content, 33% chat panel with resizable splitter
+- **✅ Tablet Layout** (768-1024px): 60% main content, 40% chat panel with resizable splitter
+- **✅ Mobile Layout** (<768px): Collapsible bottom chat panel with drag-to-resize functionality
+  - **✅ Collapse/Expand**: Chat panel collapses to small bar instead of disappearing
+  - **✅ Touch Drag**: Vertical drag-to-resize between 10%-80% of screen height
+  - **✅ Persistent Access**: Chat remains accessible after closing (doesn't disappear)
+- **✅ Breakpoint Detection**: Automatic layout switching using window resize detection
+- **✅ Tested Layouts**: All three responsive states verified with Chrome MCP
+
+### Planned Enhancements
+- **Results Integration**: Connect chat interactions to filter property results
+- **Advanced Chat Features**: Conversation history and improved responses
 
 ### Code Quality Standards
 - Biome configuration disables many accessibility rules for rapid prototyping

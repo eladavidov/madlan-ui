@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mobile Chat UX Patterns Demo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+            background: #f5f5f5;
+            direction: rtl;
+            overflow-x: hidden;
+        }
+
+        .demo-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .options-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+
+        .option-card {
+            background: white;
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            border: 2px solid transparent;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .option-card:hover {
+            border-color: #4CAF50;
+            transform: translateY(-2px);
+        }
+
+        .option-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #333;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .option-description {
+            color: #666;
+            margin-bottom: 20px;
+            line-height: 1.5;
+        }
+
+        .phone-mockup {
+            width: 200px;
+            height: 400px;
+            background: #333;
+            border-radius: 25px;
+            padding: 10px;
+            margin: 0 auto;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .screen {
+            width: 100%;
+            height: 100%;
+            background: #fff;
+            border-radius: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header-bar {
+            height: 60px;
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
+
+        .content-area {
+            padding: 20px;
+            height: calc(100% - 60px);
+            background: linear-gradient(to bottom, #e3f2fd, #bbdefb);
+            position: relative;
+        }
+
+        .property-card {
+            background: white;
+            border-radius: 8px;
+            padding: 10px;
+            margin-bottom: 10px;
+            font-size: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        /* Option A: Floating Bubble */
+        .floating-bubble {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            width: 50px;
+            height: 50px;
+            background: #4CAF50;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(76, 175, 80, 0.4);
+            animation: pulse 2s infinite;
+        }
+
+        .floating-chat-window {
+            position: absolute;
+            bottom: 80px;
+            left: 20px;
+            width: 160px;
+            height: 120px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+            display: none;
+        }
+
+        .option-card:hover .floating-chat-window {
+            display: block;
+        }
+
+        /* Option B: Slide-up Drawer */
+        .drawer-handle {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 30px;
+            background: white;
+            border-radius: 16px 16px 0 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        .handle-bar {
+            width: 30px;
+            height: 3px;
+            background: #ddd;
+            border-radius: 2px;
+        }
+
+        .drawer-content {
+            position: absolute;
+            bottom: 30px;
+            left: 0;
+            right: 0;
+            height: 0;
+            background: white;
+            transition: height 0.3s ease;
+            overflow: hidden;
+        }
+
+        .option-card:hover .drawer-content {
+            height: 140px;
+        }
+
+        /* Option C: Tab-Based */
+        .tab-bar {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 50px;
+            background: white;
+            border-top: 1px solid #eee;
+            display: flex;
+        }
+
+        .tab {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            cursor: pointer;
+            background: #f5f5f5;
+        }
+
+        .tab.active {
+            background: #4CAF50;
+            color: white;
+        }
+
+        /* Option D: Collapsible Bottom Panel */
+        .bottom-panel {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 40px;
+            background: white;
+            border-top: 2px solid #4CAF50;
+            transition: height 0.3s ease;
+            cursor: pointer;
+        }
+
+        .option-card:hover .bottom-panel {
+            height: 160px;
+        }
+
+        .panel-header {
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+            color: #4CAF50;
+        }
+
+        /* Option E: Modal Overlay */
+        .modal-backdrop {
+            position: absolute;
+            top: 60px;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            backdrop-filter: blur(2px);
+            display: none;
+        }
+
+        .modal-chat {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 140px;
+            height: 180px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+        }
+
+        .option-card:hover .modal-backdrop {
+            display: block;
+        }
+
+        .pros-cons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .pros, .cons {
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        .pros {
+            background: #e8f5e8;
+            border-left: 4px solid #4CAF50;
+        }
+
+        .cons {
+            background: #fff3e0;
+            border-left: 4px solid #ff9800;
+        }
+
+        .pros h4, .cons h4 {
+            margin-bottom: 5px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .pros ul, .cons ul {
+            list-style: none;
+            font-size: 11px;
+            line-height: 1.4;
+        }
+
+        .pros li:before {
+            content: "✓ ";
+            color: #4CAF50;
+            font-weight: bold;
+        }
+
+        .cons li:before {
+            content: "⚠ ";
+            color: #ff9800;
+            font-weight: bold;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        .current-badge {
+            background: #4CAF50;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 10px;
+            font-weight: bold;
+        }
+
+        .instructions {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            text-align: center;
+            color: #1976d2;
+        }
+    </style>
+</head>
+<body>
+    <div class="demo-container">
+        <div class="header">
+            <h1>🏠 Mobile Chat UX Patterns Demo</h1>
+            <p>עמוד הדגמה לדפוסי UX שונים עבור צ'אט AI במובייל</p>
+            <div class="instructions">
+                <strong>הוראות:</strong> העבירו עכבר מעל כל אפשרות כדי לראות את האנימציה
+            </div>
+        </div>
+
+        <div class="options-grid">
+            <!-- Current Implementation -->
+            <div class="option-card">
+                <div class="option-title">
+                    📱 Current: Bottom Sheet <span class="current-badge">CURRENT</span>
+                </div>
+                <div class="option-description">
+                    צ'אט נפתח מהתחתית ותופס 60% מהמסך
+                </div>
+                <div class="phone-mockup">
+                    <div class="screen">
+                        <div class="header-bar">מדלן</div>
+                        <div class="content-area">
+                            <div class="property-card">דירה 3 חדרים</div>
+                            <div class="property-card">דירה 4 חדרים</div>
+                            <div style="position: absolute; bottom: 0; left: 0; right: 0; height: 60%; background: white; border-radius: 16px 16px 0 0; box-shadow: 0 -4px 16px rgba(0,0,0,0.1);">
+                                <div style="display: flex; justify-content: center; padding: 8px;">
+                                    <div style="width: 30px; height: 3px; background: #ddd; border-radius: 2px;"></div>
+                                </div>
+                                <div style="background: #4CAF50; color: white; padding: 10px; text-align: center; font-size: 12px;">שוחח עם AI</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="pros-cons">
+                    <div class="pros">
+                        <h4>יתרונות:</h4>
+                        <ul>
+                            <li>תוכן ראשי נשאר גלוי</li>
+                            <li>דפוס מוכר ומודרני</li>
+                            <li>אזור צ'אט גדול</li>
+                        </ul>
+                    </div>
+                    <div class="cons">
+                        <h4>חסרונות:</h4>
+                        <ul>
+                            <li>מכסה חלק מהתוכן</li>
+                            <li>פחות אינטראקטיבי</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Option A: Floating Bubble -->
+            <div class="option-card">
+                <div class="option-title">
+                    🫧 Option A: Floating Bubble
+                </div>
+                <div class="option-description">
+                    בועה צפה בפינה → התרחבות לחלון צ'אט קטן
+                </div>
+                <div class="phone-mockup">
+                    <div class="screen">
+                        <div class="header-bar">מדלן</div>
+                        <div class="content-area">
+                            <div class="property-card">דירה 3 חדרים</div>
+                            <div class="property-card">דירה 4 חדרים</div>
+                            <div class="property-card">פנטהאוז</div>
+                            <div class="floating-bubble">💬</div>
+                            <div class="floating-chat-window">
+                                <div style="background: #4CAF50; color: white; padding: 5px; text-align: center; font-size: 10px; border-radius: 12px 12px 0 0;">AI Chat</div>
+                                <div style="padding: 5px; font-size: 10px;">שלום! איך אני יכול לעזור?</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="pros-cons">
+                    <div class="pros">
+                        <h4>יתרונות:</h4>
+                        <ul>
+                            <li>הפרעה מינימלית</li>
+                            <li>תמיד נגיש</li>
+                            <li>מוכר מאפליקציות</li>
+                        </ul>
+                    </div>
+                    <div class="cons">
+                        <h4>חסרונות:</h4>
+                        <ul>
+                            <li>שטח צ'אט מוגבל</li>
+                            <li>עלול לכסות תוכן</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Option B: Slide-up Drawer -->
+            <div class="option-card">
+                <div class="option-title">
+                    📏 Option B: Slide-up Drawer
+                </div>
+                <div class="option-description">
+                    רצועה דקה בתחתית → גרירה למעלה לחשיפה
+                </div>
+                <div class="phone-mockup">
+                    <div class="screen">
+                        <div class="header-bar">מדלן</div>
+                        <div class="content-area">
+                            <div class="property-card">דירה 3 חדרים</div>
+                            <div class="property-card">דירה 4 חדרים</div>
+                            <div class="property-card">פנטהאוז</div>
+                            <div class="drawer-handle">
+                                <div class="handle-bar"></div>
+                            </div>
+                            <div class="drawer-content">
+                                <div style="background: #4CAF50; color: white; padding: 8px; text-align: center; font-size: 11px;">שוחח עם AI</div>
+                                <div style="padding: 8px; font-size: 10px;">איך אני יכול לעזור?</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="pros-cons">
+                    <div class="pros">
+                        <h4>יתרונות:</h4>
+                        <ul>
+                            <li>שליטה של המשתמש</li>
+                            <li>חשיפה הדרגתית</li>
+                            <li>ידידותי לאגודל</li>
+                        </ul>
+                    </div>
+                    <div class="cons">
+                        <h4>חסרונות:</h4>
+                        <ul>
+                            <li>דורש מחווה</li>
+                            <li>עלול להתפספס</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Option C: Tab-Based -->
+            <div class="option-card">
+                <div class="option-title">
+                    📱 Option C: Tab-Based Toggle
+                </div>
+                <div class="option-description">
+                    לשוניות בתחתית למעבר בין חיפוש לצ'אט
+                </div>
+                <div class="phone-mockup">
+                    <div class="screen">
+                        <div class="header-bar">מדלן</div>
+                        <div class="content-area">
+                            <div class="property-card">דירה 3 חדרים</div>
+                            <div class="property-card">דירה 4 חדרים</div>
+                            <div class="property-card">פנטהאוז</div>
+                            <div class="tab-bar">
+                                <div class="tab active">🏠 חיפוש</div>
+                                <div class="tab">💬 צ'אט</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="pros-cons">
+                    <div class="pros">
+                        <h4>יתרונות:</h4>
+                        <ul>
+                            <li>מסך מלא לכל מצב</li>
+                            <li>הפרדה נקייה</li>
+                            <li>ממשק פשוט</li>
+                        </ul>
+                    </div>
+                    <div class="cons">
+                        <h4>חסרונות:</h4>
+                        <ul>
+                            <li>מעבר הקשר נדרש</li>
+                            <li>פחות חלק</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Option D: Collapsible Bottom Panel -->
+            <div class="option-card">
+                <div class="option-title">
+                    ⬆️ Option D: Collapsible Panel
+                </div>
+                <div class="option-description">
+                    רצועה תחתונה קבועה → הקשה להרחבה
+                </div>
+                <div class="phone-mockup">
+                    <div class="screen">
+                        <div class="header-bar">מדלן</div>
+                        <div class="content-area" style="padding-bottom: 40px;">
+                            <div class="property-card">דירה 3 חדרים</div>
+                            <div class="property-card">דירה 4 חדרים</div>
+                            <div class="bottom-panel">
+                                <div class="panel-header">💬 שוחח עם AI</div>
+                                <div style="padding: 8px; font-size: 10px; height: calc(100% - 40px); background: #f9f9f9;">
+                                    <div>שלום! איך אני יכול לעזור?</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="pros-cons">
+                    <div class="pros">
+                        <h4>יתרונות:</h4>
+                        <ul>
+                            <li>תמיד נגיש</li>
+                            <li>הרחבה בהקשה אחת</li>
+                            <li>איזון טוב</li>
+                        </ul>
+                    </div>
+                    <div class="cons">
+                        <h4>חסרונות:</h4>
+                        <ul>
+                            <li>תופס מקום קבוע</li>
+                            <li>פחות גמיש</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Option E: Modal Overlay -->
+            <div class="option-card">
+                <div class="option-title">
+                    🌫️ Option E: Modal with Blur
+                </div>
+                <div class="option-description">
+                    מודל מלא עם רקע מטושטש של הנכסים
+                </div>
+                <div class="phone-mockup">
+                    <div class="screen">
+                        <div class="header-bar">מדלן</div>
+                        <div class="content-area">
+                            <div class="property-card">דירה 3 חדרים</div>
+                            <div class="property-card">דירה 4 חדרים</div>
+                            <div class="property-card">פנטהאוז</div>
+                            <div class="modal-backdrop">
+                                <div class="modal-chat">
+                                    <div style="background: #4CAF50; color: white; padding: 8px; text-align: center; font-size: 11px; border-radius: 12px 12px 0 0;">שוחח עם AI</div>
+                                    <div style="padding: 8px; font-size: 10px;">שלום! איך אני יכול לעזור בחיפוש הנכס?</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="pros-cons">
+                    <div class="pros">
+                        <h4>יתרונות:</h4>
+                        <ul>
+                            <li>מיקוד בצ'אט</li>
+                            <li>הקשר עדיין גלוי</li>
+                            <li>חוויה מודרנית</li>
+                        </ul>
+                    </div>
+                    <div class="cons">
+                        <h4>חסרונות:</h4>
+                        <ul>
+                            <li>פחות אינטראקטיבי</li>
+                            <li>דורש סגירה</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div style="background: white; padding: 20px; border-radius: 12px; text-align: center; margin-top: 20px;">
+            <h3>🎯 המלצות</h3>
+            <p><strong>לנדל"ן:</strong> Floating Bubble או Collapsible Panel הכי מתאימים</p>
+            <p><strong>טרנדים 2024:</strong> Bottom Sheet (הנוכחי) או Floating Bubble הכי פופולריים</p>
+        </div>
+    </div>
+</body>
+</html>

@@ -76,10 +76,3 @@ Thumbs.db
 
 # Claude Code settings
 .claude/
-
-# Static pages source (reference only)
-static-pages-src/
-original-sources/
-docs/
-screenshots/
-Madlan/

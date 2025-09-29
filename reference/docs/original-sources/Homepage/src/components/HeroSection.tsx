@@ -1,30 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Search, MapPin, MessageCircle } from "lucide-react";
+import { Search, MapPin } from "lucide-react";
 import Image from "next/image";
 
-interface HeroSectionProps {
-  onChatToggle: () => void;
-  isChatOpen: boolean;
-}
-
-export default function HeroSection({ onChatToggle, isChatOpen }: HeroSectionProps) {
+export default function HeroSection() {
   const [searchType, setSearchType] = useState("buy");
   const [location, setLocation] = useState("");
-  const router = useRouter();
-
-  const handleSearch = () => {
-    if (location.trim()) {
-      router.push(`/search-results?location=${encodeURIComponent(location)}&type=${searchType}`);
-    } else {
-      router.push(`/search-results?type=${searchType}`);
-    }
-  };
 
   return (
     <section className="relative overflow-hidden">
@@ -100,27 +85,10 @@ export default function HeroSection({ onChatToggle, isChatOpen }: HeroSectionPro
                     className="pr-10 h-12 text-base"
                   />
                 </div>
-                <div className="flex gap-3">
-                  <Button
-                    onClick={handleSearch}
-                    className="h-12 px-8 gradient-primary text-white font-semibold"
-                  >
-                    <Search className="h-5 w-5 ml-2" />
-                    חיפוש
-                  </Button>
-                  <Button
-                    onClick={onChatToggle}
-                    variant={isChatOpen ? "default" : "outline"}
-                    className={`h-12 px-6 font-semibold transition-colors ${
-                      isChatOpen
-                        ? "bg-primary text-white hover:bg-primary/90"
-                        : "border-2 border-primary text-primary hover:bg-primary hover:text-white"
-                    }`}
-                  >
-                    <MessageCircle className="h-5 w-5 ml-2" />
-                    {isChatOpen ? "סגור צ'אט" : "שוחח עם AI"}
-                  </Button>
-                </div>
+                <Button className="h-12 px-8 gradient-primary text-white font-semibold">
+                  <Search className="h-5 w-5 ml-2" />
+                  חיפוש
+                </Button>
               </div>
 
               {/* Banner */}
