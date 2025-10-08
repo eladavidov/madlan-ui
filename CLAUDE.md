@@ -4,7 +4,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This repository contains the Madlan.co.il AI Enhancement Demo - a React-based real estate website clone with AI chat functionality. The project demonstrates how conversational AI search could enhance the Madlan property search experience.
+This repository contains **two related projects**:
+
+### 1. Madlan.co.il AI Enhancement Demo (Main Next.js App)
+A React-based real estate website clone with AI chat functionality. Demonstrates how conversational AI search could enhance the Madlan property search experience.
 
 **This is a unified Next.js application** that combines both homepage and property search functionality:
 - **Homepage** (`/`): Main Madlan homepage clone with property listings, projects, and blog sections
@@ -12,6 +15,26 @@ This repository contains the Madlan.co.il AI Enhancement Demo - a React-based re
 - **Navigation**: Seamless routing between pages with search functionality
 
 Original separate applications are preserved in `reference/static-pages-src/` for reference.
+
+### 2. Madlan Property Crawler (Crawler/ Directory)
+A production-ready web crawler built with **Crawlee + Playwright** to scrape property listings from the live Madlan.co.il website.
+
+**Purpose**: Gather real property data from Madlan to populate the demo application.
+
+**Key Files**:
+- `Crawler/docs/PRD.md` - Product Requirements Document
+- `Crawler/PROJECT-PLAN.md` - Step-by-step implementation plan
+- `Crawler/docs/ANTI-BLOCKING.md` - Anti-blocking strategy
+- `Crawler/docs/RESEARCH.md` - Website structure research (Phase 1)
+
+**Technology Stack**:
+- **Crawlee** - Web scraping framework (wraps Playwright)
+- **Playwright** - Browser automation
+- **SQLite** - Primary database for property data
+- **DuckDB** - Analytical database for queries/reports
+- **TypeScript** - Type-safe development
+
+**Status**: Phase 1 (Research & Schema Design) - In Progress
 
 ## Development Commands
 
@@ -196,3 +219,98 @@ interface Property {
 - TypeScript strict mode is enabled
 - ESLint with Next.js config provides additional linting
 - Double quotes are preferred for JavaScript/TypeScript strings
+
+---
+
+## Crawler Project (Crawler/ Directory)
+
+### Required MCP Servers
+
+**CRITICAL**: The crawler project requires MCP (Model Context Protocol) servers for browser automation and research.
+
+#### Chrome DevTools MCP (Primary - For Research)
+**Purpose**: AI-assisted website research and testing
+
+**Configuration** (add to Claude Code MCP settings):
+```json
+{
+  "mcpServers": {
+    "chrome-devtools": {
+      "command": "npx",
+      "args": ["chrome-devtools-mcp@latest"]
+    }
+  }
+}
+```
+
+**Verification**:
+```bash
+claude mcp list
+# Should show: chrome-devtools: ✓ Connected
+```
+
+**Available Tools** (after restart):
+- `mcp__chrome-devtools__new_page` - Open new browser page
+- `mcp__chrome-devtools__navigate_page` - Navigate to URL
+- `mcp__chrome-devtools__take_screenshot` - Capture screenshots
+- `mcp__chrome-devtools__click` - Click elements
+- `mcp__chrome-devtools__evaluate_script` - Run JavaScript
+- `mcp__chrome-devtools__list_console_messages` - View console logs
+
+#### Playwright MCP (Alternative)
+**Purpose**: Additional browser automation capabilities
+
+**Configuration**:
+```json
+{
+  "mcpServers": {
+    "chrome-devtools": {
+      "command": "npx",
+      "args": ["chrome-devtools-mcp@latest"]
+    },
+    "playwright": {
+      "command": "npx",
+      "args": ["@playwright/mcp@latest"]
+    }
+  }
+}
+```
+
+### MCP Setup Workflow
+
+**Before starting crawler work:**
+
+1. **Add MCP Configuration** (see above)
+2. **Restart Claude Code** completely
+3. **Verify Connection**:
+   ```bash
+   claude mcp list
+   ```
+4. **Test Tools**: Claude should be able to use `mcp__chrome-devtools__new_page`
+
+**If tools not available after restart:**
+- Check MCP server output for errors
+- Verify Node.js is installed (required for `npx`)
+- Try manual installation: `npm install -g chrome-devtools-mcp@latest`
+
+### Crawler Development Commands
+
+**From Crawler/ directory** (once Phase 2 complete):
+```bash
+npm install              # Install dependencies
+npm run crawl            # Run full crawl
+npm run crawl:test       # Test on 5-10 properties
+npm run export:json      # Export to JSON
+npm run analyze          # Run DuckDB analytics
+```
+
+### Crawler Project Status
+
+**Current Phase**: Phase 1 - Research & Schema Design
+**Next Steps**:
+1. ✅ Verify MCP tools working (Chrome DevTools or Playwright)
+2. 🔄 Research Madlan.co.il structure with MCP browser automation
+3. ⏳ Design database schema based on findings
+4. ⏳ Implement crawler with Crawlee
+
+**See `Crawler/PROJECT-PLAN.md` for detailed task list.**
