@@ -28,7 +28,7 @@ export default function HeroSection({ onChatToggle, isChatOpen }: HeroSectionPro
 
   return (
     <section className="relative overflow-hidden">
-      <div className="gradient-hero min-h-[500px] relative">
+      <div className="gradient-hero min-h-[350px] relative">
         {/* Background Elements */}
         <div className="absolute inset-0">
           {/* Building illustration on left */}
@@ -44,16 +44,16 @@ export default function HeroSection({ onChatToggle, isChatOpen }: HeroSectionPro
         </div>
 
         {/* Hero Content */}
-        <div className="container mx-auto px-4 py-16 relative z-10">
+        <div className="container mx-auto px-4 py-8 relative z-10">
           <div className="max-w-4xl mx-auto text-center">
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-4">
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-3">
               מדלן. הלוח של הקונים.
             </h1>
 
             {/* Search Card */}
-            <div className="bg-white rounded-2xl shadow-2xl p-6 md:p-8">
+            <div className="bg-white rounded-2xl shadow-2xl p-5 md:p-6">
               {/* Tabs */}
-              <div className="flex justify-center mb-6">
+              <div className="flex justify-center mb-4">
                 <div className="inline-flex bg-gray-100 p-1 rounded-lg">
                   <button
                     onClick={() => setSearchType("buy")}
@@ -122,31 +122,13 @@ export default function HeroSection({ onChatToggle, isChatOpen }: HeroSectionPro
                   </Button>
                 </div>
               </div>
-
-              {/* Banner */}
-              <div className="mt-6 flex items-center justify-center">
-                <div className="bg-orange-50 border border-orange-200 rounded-lg px-4 py-2 text-sm">
-                  <span className="text-orange-700">🏠</span>
-                  <span className="text-gray-700 mr-2">
-                    הזנו לדירה עכשיו בבנק הפועלים
-                  </span>
-                  <a href="#" className="text-primary hover:underline">
-                    לקבלת הצעה &larr;
-                  </a>
-                </div>
-              </div>
             </div>
 
             {/* Stats */}
-            <div className="mt-8 text-white">
-              <p className="text-lg">
+            <div className="mt-4 text-white">
+              <p className="text-base opacity-90">
                 כל הדירות החדשות בישראל רק באתר מדלן!
               </p>
-              <div className="flex justify-center gap-4 mt-4">
-                <button className="text-white/90 hover:text-white transition-colors">
-                  &rarr; לצפייה בכל הנכסים
-                </button>
-              </div>
             </div>
           </div>
         </div>

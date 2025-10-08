@@ -57,22 +57,6 @@ export default function Home() {
             isChatOpen={isChatOpen}
           />
 
-      {/* Current Listings Banner */}
-      <section className="py-8 bg-white">
-        <div className="container mx-auto px-4">
-          <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 text-center">
-            <p className="text-gray-700">
-              <span className="font-semibold">הזנו לדירה עכשיו בבנק הפועלים</span>
-              {" - "}
-              אישור עקרוני אונליין לכבור רכישת חופי ומשכנתא בהתאמה אישית כמו שלא ראיתם עדיין!
-            </p>
-            <Button variant="link" className="text-primary mt-2">
-              לקבלת הצעה ←
-            </Button>
-          </div>
-        </div>
-      </section>
-
       {/* Featured Properties Section */}
       <section className="py-16">
         <div className="container mx-auto px-4">
@@ -276,22 +260,6 @@ export default function Home() {
             onChatToggle={() => setIsChatOpen(!isChatOpen)}
             isChatOpen={isChatOpen}
           />
-
-          {/* Current Listings Banner */}
-          <section className="py-8 bg-white">
-            <div className="container mx-auto px-4">
-              <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 text-center">
-                <p className="text-gray-700">
-                  <span className="font-semibold">הזנו לדירה עכשיו בבנק הפועלים</span>
-                  {" - "}
-                  אישור עקרוני אונליין לכבור רכישת חופי ומשכנתא בהתאמה אישית כמו שלא ראיתם עדיין!
-                </p>
-                <Button variant="link" className="text-primary mt-2">
-                  לקבלת הצעה ←
-                </Button>
-              </div>
-            </div>
-          </section>
 
           {/* Featured Properties Section */}
           <section className="py-16">

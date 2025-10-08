@@ -94,3 +94,12 @@ body {
   top: 0;
   height: calc(100vh - 64px);
 }
+
+/* Gradient utilities */
+.gradient-primary {
+  background: linear-gradient(135deg, rgb(var(--madlan-green)) 0%, #2dc997 50%, #1fb885 100%);
+}
+
+.gradient-hero {
+  background: linear-gradient(180deg, rgb(var(--madlan-green)) 0%, rgba(82, 196, 26, 0.9) 50%, rgba(82, 196, 26, 0.8) 100%);
+}
