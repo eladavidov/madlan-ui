@@ -16,6 +16,9 @@ export interface IntegratedCrawlerOptions {
   maxProperties?: number;
   searchUrl?: string;
   dbPath?: string;
+  downloadImages?: boolean;
+  imageTimeout?: number;
+  imageRetries?: number;
 }
 
 export interface CrawlSummary {
@@ -41,6 +44,9 @@ export async function runFullCrawl(
     maxProperties = config.target.maxProperties,
     searchUrl,
     dbPath = config.database.path,
+    downloadImages = true,
+    imageTimeout,
+    imageRetries,
   } = options;
 
   const sessionId = `crawl-${Date.now()}`;
@@ -86,7 +92,11 @@ export async function runFullCrawl(
     logger.info("\n🏠 Phase 2: Crawling individual properties...");
     logger.info(`   Processing ${urlsToProcess.length} properties...`);
 
-    const stats = await crawlProperties(db, urlsToProcess, sessionId);
+    const stats = await crawlProperties(db, urlsToProcess, sessionId, {
+      downloadImages,
+      imageTimeout,
+      imageRetries,
+    });
 
     // Complete session
     sessionRepo.completeSession(sessionId, true);
@@ -127,10 +137,20 @@ export async function runFullCrawl(
  */
 export async function runPropertyCrawl(
   propertyUrls: string[],
-  options: { dbPath?: string } = {}
+  options: {
+    dbPath?: string;
+    downloadImages?: boolean;
+    imageTimeout?: number;
+    imageRetries?: number;
+  } = {}
 ): Promise<CrawlSummary> {
   const startTime = Date.now();
-  const { dbPath = config.database.path } = options;
+  const {
+    dbPath = config.database.path,
+    downloadImages = true,
+    imageTimeout,
+    imageRetries,
+  } = options;
   const sessionId = `property-crawl-${Date.now()}`;
 
   logger.info("=" .repeat(60));
@@ -149,7 +169,11 @@ export async function runPropertyCrawl(
     sessionRepo.startSession(sessionId);
 
     // Crawl properties
-    const stats = await crawlProperties(db, propertyUrls, sessionId);
+    const stats = await crawlProperties(db, propertyUrls, sessionId, {
+      downloadImages,
+      imageTimeout,
+      imageRetries,
+    });
 
     // Complete session
     sessionRepo.completeSession(sessionId, true);

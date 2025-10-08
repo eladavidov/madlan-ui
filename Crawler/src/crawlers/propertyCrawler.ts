@@ -8,6 +8,7 @@ import { PropertyRepository } from "../database/repositories/PropertyRepository.
 import { ImageRepository } from "../database/repositories/ImageRepository.js";
 import { CrawlSessionRepository } from "../database/repositories/CrawlSessionRepository.js";
 import { extractPropertyData, extractImageUrls } from "../extractors/propertyExtractor.js";
+import { ImageStore } from "../storage/imageStore.js";
 import { randomDelay } from "../utils/sleep.js";
 import { logger } from "../utils/logger.js";
 import { config } from "../utils/config.js";
@@ -19,6 +20,14 @@ export interface CrawlerStats {
   propertiesUpdated: number;
   propertiesFailed: number;
   imagesFound: number;
+  imagesDownloaded: number;
+  imagesFailed: number;
+}
+
+export interface PropertyCrawlerOptions {
+  downloadImages?: boolean;
+  imageTimeout?: number;
+  imageRetries?: number;
 }
 
 /**
@@ -26,11 +35,15 @@ export interface CrawlerStats {
  */
 export function createPropertyCrawler(
   db: DatabaseConnection,
-  sessionId: string
+  sessionId: string,
+  options: PropertyCrawlerOptions = {}
 ): PlaywrightCrawler {
+  const { downloadImages = true, imageTimeout = 30000, imageRetries = 3 } = options;
+
   const propertyRepo = new PropertyRepository(db);
   const imageRepo = new ImageRepository(db);
   const sessionRepo = new CrawlSessionRepository(db);
+  const imageStore = new ImageStore(db);
 
   const stats: CrawlerStats = {
     propertiesFound: 0,
@@ -38,6 +51,8 @@ export function createPropertyCrawler(
     propertiesUpdated: 0,
     propertiesFailed: 0,
     imagesFound: 0,
+    imagesDownloaded: 0,
+    imagesFailed: 0,
   };
 
   const crawler = new PlaywrightCrawler({
@@ -129,19 +144,45 @@ export function createPropertyCrawler(
         stats.imagesFound += imageUrls.length;
 
         if (imageUrls.length > 0) {
-          // Save image metadata
-          const images = imageUrls.map((url, index) => ({
-            property_id: propertyData.id,
-            image_url: url,
-            image_order: index,
-            is_main_image: index === 0,
-          }));
+          logger.info(`Found ${imageUrls.length} images for property ${propertyData.id}`);
 
-          // Delete old images and insert new ones
+          // Delete old image records
           imageRepo.deleteByPropertyId(propertyData.id);
-          imageRepo.insertMany(images);
 
-          logger.info(`Saved ${imageUrls.length} images for property ${propertyData.id}`);
+          // Download images if enabled
+          if (downloadImages) {
+            try {
+              const downloadStats = await imageStore.downloadPropertyImages(
+                propertyData.id,
+                imageUrls,
+                { maxRetries: imageRetries, timeout: imageTimeout }
+              );
+
+              stats.imagesDownloaded += downloadStats.successful;
+              stats.imagesFailed += downloadStats.failed;
+
+              logger.info(
+                `Images for ${propertyData.id}: ` +
+                  `${downloadStats.successful} downloaded, ` +
+                  `${downloadStats.failed} failed, ` +
+                  `${downloadStats.skipped} skipped`
+              );
+            } catch (error: any) {
+              logger.error(`Error downloading images for ${propertyData.id}:`, error);
+              stats.imagesFailed += imageUrls.length;
+            }
+          } else {
+            // Just save image URLs without downloading
+            const images = imageUrls.map((url, index) => ({
+              property_id: propertyData.id,
+              image_url: url,
+              image_order: index,
+              is_main_image: index === 0,
+            }));
+
+            imageRepo.insertMany(images);
+            logger.info(`Saved ${imageUrls.length} image URLs (download disabled)`);
+          }
         }
 
         // Update session stats
@@ -150,6 +191,8 @@ export function createPropertyCrawler(
           properties_new: stats.propertiesNew,
           properties_updated: stats.propertiesUpdated,
           properties_failed: stats.propertiesFailed,
+          images_downloaded: stats.imagesDownloaded,
+          images_failed: stats.imagesFailed,
         });
 
         // Random delay before next request
@@ -193,7 +236,8 @@ export function createPropertyCrawler(
 export async function crawlProperties(
   db: DatabaseConnection,
   propertyUrls: string[],
-  sessionId?: string
+  sessionId?: string,
+  options?: PropertyCrawlerOptions
 ): Promise<CrawlerStats> {
   const actualSessionId = sessionId || `crawl-${Date.now()}`;
   const sessionRepo = new CrawlSessionRepository(db);
@@ -205,7 +249,7 @@ export async function crawlProperties(
 
   try {
     // Create crawler
-    const crawler = createPropertyCrawler(db, actualSessionId);
+    const crawler = createPropertyCrawler(db, actualSessionId, options);
 
     // Add URLs to queue
     await crawler.addRequests(propertyUrls);
@@ -224,7 +268,9 @@ export async function crawlProperties(
       propertiesNew: finalStats?.properties_new || 0,
       propertiesUpdated: finalStats?.properties_updated || 0,
       propertiesFailed: finalStats?.properties_failed || 0,
-      imagesFound: 0, // Not tracked in session
+      imagesFound: 0, // Not tracked separately
+      imagesDownloaded: finalStats?.images_downloaded || 0,
+      imagesFailed: finalStats?.images_failed || 0,
     };
   } catch (error: any) {
     logger.error("Crawler error:", error);
