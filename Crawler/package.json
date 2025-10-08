@@ -1,0 +1,54 @@
+{
+  "name": "madlan-crawler",
+  "version": "1.0.0",
+  "description": "Production-ready web crawler for Madlan.co.il property listings",
+  "main": "dist/main.js",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/main.js",
+    "dev": "tsx src/main.ts",
+    "crawl": "npm run build && node dist/main.js",
+    "crawl:test": "npm run build && node dist/main.js --limit 10",
+    "export:json": "npm run build && node dist/export/jsonExporter.js",
+    "analyze": "npm run build && node dist/scripts/analyze-data.js",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "lint": "eslint src --ext .ts",
+    "format": "prettier --write \"src/**/*.ts\""
+  },
+  "keywords": [
+    "crawler",
+    "madlan",
+    "real-estate",
+    "web-scraping",
+    "playwright",
+    "crawlee"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "better-sqlite3": "^11.10.0",
+    "crawlee": "^3.15.1",
+    "dotenv": "^16.6.1",
+    "duckdb": "^1.4.1",
+    "playwright": "^1.56.0",
+    "winston": "^3.18.3"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.12",
+    "@types/jest": "^29.5.14",
+    "@types/node": "^22.10.1",
+    "@typescript-eslint/eslint-plugin": "^8.18.0",
+    "@typescript-eslint/parser": "^8.18.0",
+    "eslint": "^9.16.0",
+    "jest": "^29.7.0",
+    "prettier": "^3.4.2",
+    "ts-jest": "^29.2.5",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
