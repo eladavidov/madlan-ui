@@ -2,82 +2,149 @@
  * Madlan Crawler - Main Entry Point
  */
 
-import { initDatabase } from "./database/connection.js";
-import { crawlProperties } from "./crawlers/propertyCrawler.js";
-import { logger } from "./utils/logger.js";
-import { config, validateConfig } from "./utils/config.js";
+import { runFullCrawl, runPropertyCrawl } from "./crawlers/integratedCrawler.js";
+import { isSearchPage, isPropertyPage } from "./crawlers/router.js";
+import { validateConfig } from "./utils/config.js";
 
 async function main() {
-  console.log("🕷️  Madlan Property Crawler");
-  console.log("=" .repeat(50));
+  console.log("🕷️  Madlan Property Crawler v1.0");
+  console.log("=" .repeat(60));
 
   try {
     // Validate configuration
     validateConfig();
-    logger.info("Configuration validated");
+    console.log("✅ Configuration validated\n");
 
-    // Initialize database
-    logger.info("Initializing database...");
-    const db = await initDatabase(config.database.path);
-    logger.info(`Database initialized: ${config.database.path}`);
+    // Parse command line arguments
+    const args = process.argv.slice(2);
 
-    // Get test URLs from command line or use defaults
-    const testUrls = process.argv.slice(2);
-
-    if (testUrls.length === 0) {
-      console.log("\n⚠️  No URLs provided. Usage:");
-      console.log("  npm run dev <url1> [url2] [url3]...");
-      console.log("\nExample:");
-      console.log("  npm run dev https://www.madlan.co.il/listings/12345");
-      console.log("\n💡 Phase 2.2 Test Mode:");
-      console.log("  Testing with hardcoded URL (will likely hit CAPTCHA)");
-      console.log();
-
-      // Use a test URL for Phase 2.2
-      const testUrl = "https://www.madlan.co.il/listings/test-123";
-      console.log(`Testing with URL: ${testUrl}`);
-      console.log("Note: This will likely fail due to CAPTCHA protection");
-      console.log();
-
-      // Don't actually run - just show that the crawler is set up
-      console.log("✅ Crawler setup complete");
-      console.log("✅ Database connection working");
-      console.log("✅ Configuration loaded");
-      console.log("\n🎯 Phase 2.2 Status: Basic crawler prototype created");
-      console.log("\n📝 Next Steps:");
-      console.log("  1. Implement search results crawler (Phase 3)");
-      console.log("  2. Work on CAPTCHA bypass strategies");
-      console.log("  3. Test with live property URLs");
-
-      db.close();
+    // Show help if no arguments
+    if (args.length === 0) {
+      showHelp();
       return;
     }
 
-    // Run crawler with provided URLs
-    logger.info(`Starting crawl with ${testUrls.length} URLs`);
-    console.log(`\n🚀 Crawling ${testUrls.length} properties...\n`);
+    // Parse options
+    const options = parseArgs(args);
 
-    const stats = await crawlProperties(db, testUrls);
+    if (options.help) {
+      showHelp();
+      return;
+    }
 
-    // Print results
-    console.log("\n" + "=".repeat(50));
-    console.log("📊 Crawl Results:");
-    console.log("=".repeat(50));
-    console.log(`  Properties Found:   ${stats.propertiesFound}`);
-    console.log(`  New Properties:     ${stats.propertiesNew}`);
-    console.log(`  Updated Properties: ${stats.propertiesUpdated}`);
-    console.log(`  Failed Properties:  ${stats.propertiesFailed}`);
-    console.log(`  Images Found:       ${stats.imagesFound}`);
-    console.log("=".repeat(50));
+    // Determine crawl mode
+    if (options.urls.length === 0) {
+      // Full crawl mode (search → properties)
+      console.log("📋 Mode: Full Crawl (Search → Properties)\n");
+      const summary = await runFullCrawl({
+        city: options.city,
+        maxSearchPages: options.maxPages,
+        maxProperties: options.maxProperties,
+      });
 
-    // Close database
-    db.close();
-    logger.info("Crawler finished successfully");
+      console.log("\n✅ Crawl completed successfully!");
+      console.log(`Session ID: ${summary.sessionId}`);
+    } else {
+      // Check if URLs are search pages or property pages
+      const searchUrls = options.urls.filter(isSearchPage);
+      const propertyUrls = options.urls.filter(isPropertyPage);
+
+      if (searchUrls.length > 0 && propertyUrls.length > 0) {
+        console.error("❌ Error: Cannot mix search URLs and property URLs");
+        console.error("   Please provide either search URLs OR property URLs, not both");
+        process.exit(1);
+      }
+
+      if (searchUrls.length > 0) {
+        // Search mode
+        console.log("📋 Mode: Search Crawl\n");
+        await runFullCrawl({
+          searchUrl: searchUrls[0],
+          maxSearchPages: options.maxPages,
+          maxProperties: options.maxProperties,
+        });
+        console.log("\n✅ Search crawl completed successfully!");
+      } else if (propertyUrls.length > 0) {
+        // Property mode
+        console.log("🏠 Mode: Property Crawl\n");
+        await runPropertyCrawl(propertyUrls);
+        console.log("\n✅ Property crawl completed successfully!");
+      } else {
+        console.error("❌ Error: No valid URLs provided");
+        console.error("   URLs must be either search pages or property pages from Madlan.co.il");
+        process.exit(1);
+      }
+    }
   } catch (error: any) {
-    logger.error("Crawler failed:", error);
-    console.error("\n❌ Error:", error.message);
+    console.error("\n❌ Crawler failed:", error.message);
+    if (error.stack) {
+      console.error("\nStack trace:");
+      console.error(error.stack);
+    }
     process.exit(1);
   }
+}
+
+function parseArgs(args: string[]): {
+  help: boolean;
+  city?: string;
+  maxPages?: number;
+  maxProperties?: number;
+  urls: string[];
+} {
+  const options = {
+    help: false,
+    city: undefined as string | undefined,
+    maxPages: undefined as number | undefined,
+    maxProperties: undefined as number | undefined,
+    urls: [] as string[],
+  };
+
+  for (let i = 0; i < args.length; i++) {
+    const arg = args[i];
+
+    if (arg === "--help" || arg === "-h") {
+      options.help = true;
+    } else if (arg === "--city" && i + 1 < args.length) {
+      options.city = args[++i];
+    } else if (arg === "--max-pages" && i + 1 < args.length) {
+      options.maxPages = parseInt(args[++i], 10);
+    } else if (arg === "--max-properties" && i + 1 < args.length) {
+      options.maxProperties = parseInt(args[++i], 10);
+    } else if (arg.startsWith("http")) {
+      options.urls.push(arg);
+    }
+  }
+
+  return options;
+}
+
+function showHelp() {
+  console.log("Usage:");
+  console.log("  npm run dev [options] [urls...]");
+  console.log();
+  console.log("Modes:");
+  console.log("  1. Full crawl (no URLs):");
+  console.log("     npm run dev --city חיפה --max-pages 5");
+  console.log();
+  console.log("  2. Search crawl (with search URL):");
+  console.log("     npm run dev https://www.madlan.co.il/for-sale/חיפה");
+  console.log();
+  console.log("  3. Property crawl (with property URLs):");
+  console.log("     npm run dev https://www.madlan.co.il/listings/12345");
+  console.log();
+  console.log("Options:");
+  console.log("  --city <city>              Target city (default: חיפה)");
+  console.log("  --max-pages <n>            Max search pages (default: 5)");
+  console.log("  --max-properties <n>       Max properties to crawl (default: 100)");
+  console.log("  --help, -h                 Show this help");
+  console.log();
+  console.log("Examples:");
+  console.log("  npm run dev --city תל-אביב --max-pages 3");
+  console.log("  npm run dev https://www.madlan.co.il/listings/123 https://www.madlan.co.il/listings/456");
+  console.log();
+  console.log("⚠️  Note: CAPTCHA protection will block most live requests");
+  console.log("   This is expected from Phase 1 research findings");
 }
 
 // Run main
