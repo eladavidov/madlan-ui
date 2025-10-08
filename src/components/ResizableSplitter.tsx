@@ -13,9 +13,9 @@ interface ResizableSplitterProps {
 
 export default function ResizableSplitter({
   children,
-  initialLeftWidth = 67,
+  initialLeftWidth = 77,
   minLeftWidth = 30,
-  maxLeftWidth = 80,
+  maxLeftWidth = 85,
   onResize,
   onClose
 }: ResizableSplitterProps) {

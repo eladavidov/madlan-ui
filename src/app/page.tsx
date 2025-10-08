@@ -17,7 +17,7 @@ import Image from "next/image";
 
 export default function Home() {
   const [isChatOpen, setIsChatOpen] = useState(false);
-  const [chatWidth, setChatWidth] = useState(33); // Percentage
+  const [chatWidth, setChatWidth] = useState(23); // Percentage
   const [isMobile, setIsMobile] = useState(false);
 
   // Detect screen size
@@ -44,9 +44,9 @@ export default function Home() {
       {isChatOpen ? (
         <div className="h-[calc(100vh-64px)]">
           <ResizableSplitter
-            initialLeftWidth={67}
+            initialLeftWidth={77}
             minLeftWidth={30}
-            maxLeftWidth={80}
+            maxLeftWidth={85}
             onResize={(width) => setChatWidth(100 - width)}
             onClose={() => setIsChatOpen(false)}
           >
