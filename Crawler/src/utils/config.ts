@@ -34,14 +34,21 @@ export const config = {
     concurrencyMin: parseInt(process.env.CONCURRENCY_MIN || "2", 10),
     concurrencyMax: parseInt(process.env.CONCURRENCY_MAX || "5", 10),
     maxRequestsPerMinute: parseInt(process.env.MAX_REQUESTS_PER_MINUTE || "60", 10),
+    maxRequestRetries: parseInt(process.env.MAX_REQUEST_RETRIES || "3", 10),
     requestDelayMin: parseInt(process.env.REQUEST_DELAY_MIN || "2000", 10),
     requestDelayMax: parseInt(process.env.REQUEST_DELAY_MAX || "5000", 10),
+    // Fresh browser per property (anti-blocking strategy)
+    freshBrowserPerProperty: process.env.FRESH_BROWSER_PER_PROPERTY !== "false", // Default: true
+    browserLaunchDelayMin: parseInt(process.env.BROWSER_LAUNCH_DELAY_MIN || "60000", 10), // 60s default
+    browserLaunchDelayMax: parseInt(process.env.BROWSER_LAUNCH_DELAY_MAX || "120000", 10), // 120s default
   },
 
   // Target
   target: {
     city: process.env.TARGET_CITY || "חיפה",
     maxProperties: parseInt(process.env.MAX_PROPERTIES || "100", 10),
+    // CRITICAL: Correct URL format with required parameters
+    searchUrlTemplate: "https://www.madlan.co.il/for-sale/{city}-%D7%99%D7%A9%D7%A8%D7%90%D7%9C?tracking_search_source=new_search&marketplace=residential",
   },
 
   // Logging

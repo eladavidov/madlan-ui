@@ -25,32 +25,46 @@ export async function extractPropertyData(
 
     const propertyId = urlMatch[2];
 
-    // Extract basic fields
+    // Extract price
     const price = await extractNumber(page, PROPERTY_PAGE_SELECTORS.price);
-    const rooms = await extractNumber(page, PROPERTY_PAGE_SELECTORS.rooms);
-    const size = await extractNumber(page, PROPERTY_PAGE_SELECTORS.size);
-    const floor = await extractNumber(page, PROPERTY_PAGE_SELECTORS.floor);
-    const totalFloors = await extractNumber(page, PROPERTY_PAGE_SELECTORS.totalFloors);
 
-    // Extract text fields
-    const address = await extractText(page, PROPERTY_PAGE_SELECTORS.address);
-    const neighborhood = await extractText(page, PROPERTY_PAGE_SELECTORS.neighborhood);
-    const city = await extractText(page, PROPERTY_PAGE_SELECTORS.city);
+    // Extract rooms, floor, size (context-based - same CSS class but different labels)
+    const rooms = await extractNumberByLabel(page, 'חדרים');
+    const floor = await extractNumberByLabel(page, 'קומה');
+    const size = await extractNumberByLabel(page, 'מ״ר');
+    const totalFloors = await extractNumberByLabel(page, 'קומות בבניין');
+
+    // Extract address (H1 contains full location)
+    const addressFull = await extractText(page, PROPERTY_PAGE_SELECTORS.address);
+    // Parse address: "רענן , כרמל ותיק, חיפה" -> street, neighborhood, city
+    const addressParts = addressFull?.split(',').map(s => s.trim()) || [];
+    const address = addressParts[0] || null;
+    const neighborhood = addressParts[1] || null;
+    const city = addressParts[2] || addressParts[addressParts.length - 1] || 'חיפה';
+
+    // Extract property type
     const propertyTypeRaw = await extractText(page, PROPERTY_PAGE_SELECTORS.propertyType);
-    const description = await extractText(page, PROPERTY_PAGE_SELECTORS.description);
 
-    // Extract amenities (boolean flags)
-    const hasParking = await checkExists(page, PROPERTY_PAGE_SELECTORS.amenities.parking);
-    const hasElevator = await checkExists(page, PROPERTY_PAGE_SELECTORS.amenities.elevator);
-    const hasBalcony = await checkExists(page, PROPERTY_PAGE_SELECTORS.amenities.balcony);
-    const hasAirConditioning = await checkExists(page, PROPERTY_PAGE_SELECTORS.amenities.airConditioning);
-    const hasSecurityDoor = await checkExists(page, PROPERTY_PAGE_SELECTORS.amenities.securityDoor);
-    const hasBars = await checkExists(page, PROPERTY_PAGE_SELECTORS.amenities.bars);
-    const hasStorage = await checkExists(page, PROPERTY_PAGE_SELECTORS.amenities.storage);
-    const hasShelter = await checkExists(page, PROPERTY_PAGE_SELECTORS.amenities.shelter);
-    const isAccessible = await checkExists(page, PROPERTY_PAGE_SELECTORS.amenities.accessible);
-    const isRenovated = await checkExists(page, PROPERTY_PAGE_SELECTORS.amenities.renovated);
-    const isFurnished = await checkExists(page, PROPERTY_PAGE_SELECTORS.amenities.furnished);
+    // Extract description
+    const description = await page.evaluate(() => {
+      const heading = Array.from(document.querySelectorAll('h2')).find(h2 =>
+        h2.textContent?.includes('תיאור הנכס')
+      );
+      return heading?.nextElementSibling?.textContent?.trim() || null;
+    });
+
+    // Extract amenities (text-based detection)
+    const hasParking = await checkTextExists(page, PROPERTY_PAGE_SELECTORS.amenities.parking);
+    const hasElevator = await checkTextExists(page, PROPERTY_PAGE_SELECTORS.amenities.elevator);
+    const hasBalcony = await checkTextExists(page, PROPERTY_PAGE_SELECTORS.amenities.balcony);
+    const hasAirConditioning = await checkTextExists(page, PROPERTY_PAGE_SELECTORS.amenities.airConditioning);
+    const hasSecurityDoor = await checkTextExists(page, PROPERTY_PAGE_SELECTORS.amenities.securityDoor);
+    const hasBars = await checkTextExists(page, PROPERTY_PAGE_SELECTORS.amenities.bars);
+    const hasStorage = await checkTextExists(page, PROPERTY_PAGE_SELECTORS.amenities.storage);
+    const hasShelter = await checkTextExists(page, PROPERTY_PAGE_SELECTORS.amenities.shelter);
+    const isAccessible = await checkTextExists(page, PROPERTY_PAGE_SELECTORS.amenities.accessible);
+    const isRenovated = await checkTextExists(page, PROPERTY_PAGE_SELECTORS.amenities.renovated);
+    const isFurnished = await checkTextExists(page, PROPERTY_PAGE_SELECTORS.amenities.furnished);
 
     // Extract contact info
     const contactName = await extractText(page, PROPERTY_PAGE_SELECTORS.contactName);
@@ -157,21 +171,63 @@ async function extractNumber(page: Page, selector: string): Promise<number | nul
 }
 
 /**
- * Helper: Check if element exists (for amenities)
+ * Helper: Check if text exists anywhere on page (for text-based amenities)
  */
-async function checkExists(page: Page, selector: string): Promise<boolean | null> {
+async function checkTextExists(page: Page, searchText: string): Promise<boolean> {
   try {
-    // Split selector by comma (multiple selectors)
-    const selectors = selector.split(",").map((s) => s.trim());
-
-    for (const sel of selectors) {
-      const element = await page.$(sel);
-      if (element) {
-        return true;
-      }
-    }
-
+    const found = await page.evaluate((text) => {
+      return document.body.textContent?.includes(text) || false;
+    }, searchText);
+    return found;
+  } catch (error) {
     return false;
+  }
+}
+
+/**
+ * Helper: Extract number by adjacent label text
+ * Example: Find "5" next to "חדרים" (rooms)
+ */
+async function extractNumberByLabel(page: Page, labelText: string): Promise<number | null> {
+  try {
+    const value = await page.evaluate((label) => {
+      // Find all elements
+      const elements = Array.from(document.querySelectorAll('*'));
+
+      // Find element with label text
+      const labelEl = elements.find(el =>
+        el.textContent?.trim() === label && el.children.length === 0
+      );
+
+      if (!labelEl) return null;
+
+      // Check previous sibling for value
+      const prevSibling = labelEl.previousElementSibling;
+      if (prevSibling && prevSibling.children.length === 0) {
+        const text = prevSibling.textContent?.trim();
+        if (text) return text;
+      }
+
+      // Check if value is in same parent container
+      const parent = labelEl.parentElement;
+      if (parent) {
+        const valueEl = Array.from(parent.children).find(child =>
+          child !== labelEl &&
+          child.children.length === 0 &&
+          /^\d+\.?\d*$/.test(child.textContent?.trim() || '')
+        );
+        if (valueEl) return valueEl.textContent?.trim() || null;
+      }
+
+      return null;
+    }, labelText);
+
+    if (!value) return null;
+
+    // Parse number
+    const cleaned = value.replace(/[^\d.]/g, "");
+    const number = parseFloat(cleaned);
+    return isNaN(number) ? null : number;
   } catch (error) {
     return null;
   }

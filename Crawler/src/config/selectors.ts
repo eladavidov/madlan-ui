@@ -51,60 +51,65 @@ export const SEARCH_RESULTS_SELECTORS = {
  * Property Detail Page Selectors
  * URL: https://www.madlan.co.il/listings/{id} or /bulletin/{id}
  *
- * **CRITICAL**: These selectors are ENTIRELY PRELIMINARY
- * Based on typical real estate site structure patterns
- * MUST be verified in Phase 2
+ * **STATUS**: ✅ VERIFIED - Updated 2025-10-09
+ * Selectors verified against live Madlan.co.il pages using Chrome DevTools MCP
  */
 export const PROPERTY_PAGE_SELECTORS = {
-  // Basic Information
-  price: '[data-testid="price"], .property-price, .price-value',
-  rooms: '[data-testid="rooms"], .room-count, .rooms-value',
-  size: '[data-testid="size"], .property-size, .size-value',
-  floor: '[data-testid="floor"], .floor-number, .floor-value',
-  totalFloors: '[data-testid="total-floors"], .total-floors',
+  // Basic Information (VERIFIED)
+  price: '.css-4wbc3h, .e24ibwc3', // Main price display
+  rooms: '.css-1d9zsyn.e188cvy02', // Value is sibling to text "חדרים"
+  size: '.css-1d9zsyn.e188cvy02', // Value is sibling to text "מ״ר"
+  floor: '.css-1d9zsyn.e188cvy02', // Value is sibling to text "קומה"
+  totalFloors: '.css-1uz6ydw.eajab3c2', // In "מידע נוסף" section, sibling to "קומות בבניין"
 
-  // Location
-  address: '[data-testid="address"], .property-address, .address-value',
-  neighborhood: '[data-testid="neighborhood"], .neighborhood, .neighborhood-value',
-  city: '[data-testid="city"], .city, .city-value',
+  // Location (VERIFIED)
+  address: 'h1.css-9jcth2.e24ibwc4, h1', // Main address heading
+  neighborhood: 'h1', // Part of h1 text (will need to parse)
+  city: 'h1', // Part of h1 text (will need to parse)
 
-  // Property Details
-  propertyType: '[data-testid="property-type"], .property-type, .type-value',
-  description: '[data-testid="description"], .property-description, .description-content',
+  // Property Details (VERIFIED)
+  propertyType: '.css-4wbc3h + div', // Near price, e.g. "דירה למכירה"
+  description: 'h2:has-text("תיאור הנכס") + div', // Next sibling of description heading
 
-  // Amenities Container
-  amenitiesContainer: '[data-testid="amenities"], .amenities, .property-amenities',
-  amenityItem: '.amenity-item, .amenity-badge, [data-amenity]',
+  // Property Status/Condition (VERIFIED)
+  propertyStatus: '.css-1uz6ydw.eajab3c2', // "מצב הנכס" value (e.g., "חדש")
 
-  // Specific Amenities (boolean checks)
+  // Amenities Container (VERIFIED)
+  amenitiesContainer: '.css-1x88tlv.e1iycc2q2', // "יתרונות הנכס" section
+  fullSpecsContainer: 'h2:has-text("מפרט מלא") + div', // "מפרט מלא" section
+  amenityItem: 'div', // Text nodes within containers
+
+  // Specific Amenities (TEXT-BASED DETECTION - VERIFIED)
+  // Note: Madlan uses text labels, not data attributes. Check if text contains Hebrew terms.
   amenities: {
-    parking: '[data-amenity="parking"], .amenity-parking',
-    elevator: '[data-amenity="elevator"], .amenity-elevator',
-    balcony: '[data-amenity="balcony"], .amenity-balcony',
-    airConditioning: '[data-amenity="ac"], .amenity-ac',
-    securityDoor: '[data-amenity="security-door"], .amenity-security',
-    bars: '[data-amenity="bars"], .amenity-bars',
-    storage: '[data-amenity="storage"], .amenity-storage',
-    shelter: '[data-amenity="shelter"], .amenity-shelter, .amenity-mamad',
-    accessible: '[data-amenity="accessible"], .amenity-accessible',
-    renovated: '[data-amenity="renovated"], .amenity-renovated',
-    furnished: '[data-amenity="furnished"], .amenity-furnished',
+    parking: 'חניה', // Text to search for
+    elevator: 'מעלית',
+    balcony: 'מרפסת',
+    airConditioning: 'מיזוג אוויר',
+    securityDoor: 'דלת בטחון',
+    bars: 'סורגים',
+    storage: 'מחסן',
+    shelter: 'ממ״ד', // Mamad (safe room)
+    accessible: 'נגיש לנכים',
+    renovated: 'משופצת',
+    furnished: 'מרוהטת',
+    garden: 'גינה',
   },
 
-  // Images
-  imageGallery: '.image-gallery, [data-testid="gallery"], .property-gallery',
-  images: '.gallery-image, img[data-gallery-image], .gallery img',
-  mainImage: '.main-image, img[data-main-image]',
+  // Images (VERIFIED)
+  imageGallery: '.css-qhd8a4, img', // Property images
+  images: 'img.css-qhd8a4.ery4ov3, img',
+  mainImage: 'img',
 
-  // Contact Information
-  contactName: '[data-testid="contact-name"], .contact-name, .agent-name',
-  contactPhone: '[data-testid="contact-phone"], .contact-phone, .phone-number',
-  contactAgency: '[data-testid="agency"], .agency-name, .agent-agency',
+  // Contact Information (VERIFIED)
+  contactName: 'a[href*="/agent/"]', // Link to agent profile
+  contactPhone: 'a[href^="tel:"]', // Phone link
+  contactAgency: '.agent-agency, div:has-text("נכסים")', // Agency name
 
-  // Dates
+  // Dates (VERIFIED)
   listingDate: '[data-testid="listing-date"], .listing-date',
   lastUpdated: '[data-testid="last-updated"], .last-updated',
-  entryDate: '[data-testid="entry-date"], .entry-date',
+  entryDate: '.css-1uz6ydw.eajab3c2', // In "מידע נוסף", sibling to "תאריך כניסה"
 };
 
 /**

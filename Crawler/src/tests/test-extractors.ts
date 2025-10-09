@@ -5,7 +5,6 @@
 
 import { chromium } from "playwright";
 import { extractPropertyData, extractImageUrls } from "../extractors/propertyExtractor.js";
-import type { PropertyInput } from "../models/Property.js";
 
 console.log("🧪 Testing Extractors with Mock HTML\n");
 

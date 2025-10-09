@@ -6,7 +6,9 @@
 import { initDatabase } from "../database/connection.js";
 import { crawlSearchResults } from "./searchCrawler.js";
 import { crawlProperties } from "./propertyCrawler.js";
+import { crawlPropertiesWithFreshBrowser } from "./singleBrowserCrawler.js";
 import { CrawlSessionRepository } from "../database/repositories/CrawlSessionRepository.js";
+import { ProgressReporter } from "../utils/progressReporter.js";
 import { logger } from "../utils/logger.js";
 import { config } from "../utils/config.js";
 
@@ -50,7 +52,8 @@ export async function runFullCrawl(
   } = options;
 
   const sessionId = `crawl-${Date.now()}`;
-  const actualSearchUrl = searchUrl || `https://www.madlan.co.il/for-sale/${encodeURIComponent(city)}`;
+  // Use config template for correct URL format
+  const actualSearchUrl = searchUrl || config.target.searchUrlTemplate.replace("{city}", encodeURIComponent(city));
 
   logger.info("=" .repeat(60));
   logger.info("🕷️  Starting Integrated Crawl");
@@ -61,6 +64,10 @@ export async function runFullCrawl(
   logger.info(`Max Search Pages: ${maxSearchPages}`);
   logger.info(`Max Properties: ${maxProperties}`);
   logger.info("=" .repeat(60));
+
+  // Initialize progress reporter
+  const progressReporter = new ProgressReporter();
+  progressReporter.start(15000); // Update every 15 seconds
 
   try {
     // Initialize database
@@ -92,11 +99,47 @@ export async function runFullCrawl(
     logger.info("\n🏠 Phase 2: Crawling individual properties...");
     logger.info(`   Processing ${urlsToProcess.length} properties...`);
 
-    const stats = await crawlProperties(db, urlsToProcess, sessionId, {
-      downloadImages,
-      imageTimeout,
-      imageRetries,
+    // Choose crawler based on configuration
+    let stats;
+    if (config.crawler.freshBrowserPerProperty) {
+      logger.info("   Strategy: Fresh browser per property (anti-blocking)");
+      stats = await crawlPropertiesWithFreshBrowser(db, urlsToProcess, sessionId, {
+        downloadImages,
+        imageTimeout,
+        imageRetries,
+      });
+
+      // Convert stats format
+      stats = {
+        propertiesFound: stats.propertiesProcessed,
+        propertiesNew: stats.propertiesSuccessful,
+        propertiesUpdated: 0,
+        propertiesFailed: stats.propertiesFailed,
+        imagesFound: 0,
+        imagesDownloaded: stats.imagesDownloaded,
+        imagesFailed: stats.imagesFailed,
+      };
+    } else {
+      logger.info("   Strategy: Standard Crawlee (session-based)");
+      stats = await crawlProperties(db, urlsToProcess, sessionId, {
+        downloadImages,
+        imageTimeout,
+        imageRetries,
+      });
+    }
+
+    // Update final progress stats
+    progressReporter.updateStats({
+      propertiesFound: stats.propertiesFound,
+      propertiesNew: stats.propertiesNew,
+      propertiesUpdated: stats.propertiesUpdated,
+      propertiesFailed: stats.propertiesFailed,
+      imagesDownloaded: stats.imagesDownloaded,
+      imagesFailed: stats.imagesFailed,
     });
+
+    // Stop progress reporter
+    progressReporter.stop();
 
     // Complete session
     sessionRepo.completeSession(sessionId, true);
@@ -112,6 +155,10 @@ export async function runFullCrawl(
     logger.info(`New Properties: ${stats.propertiesNew}`);
     logger.info(`Updated Properties: ${stats.propertiesUpdated}`);
     logger.info(`Failed Properties: ${stats.propertiesFailed}`);
+    if (downloadImages) {
+      logger.info(`Images Downloaded: ${stats.imagesDownloaded}`);
+      logger.info(`Images Failed: ${stats.imagesFailed}`);
+    }
     logger.info("=".repeat(60));
 
     // Close database
@@ -127,6 +174,7 @@ export async function runFullCrawl(
       duration,
     };
   } catch (error: any) {
+    progressReporter.stop();
     logger.error("Integrated crawl failed:", error);
     throw error;
   }

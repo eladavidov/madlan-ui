@@ -3,7 +3,7 @@
  * Tests image downloading with real URLs
  */
 
-import { downloadImage, downloadImages, buildImagePath } from "../downloaders/imageDownloader.js";
+import { downloadImage, downloadImages } from "../downloaders/imageDownloader.js";
 import { ImageStore } from "../storage/imageStore.js";
 import { PropertyRepository } from "../database/repositories/PropertyRepository.js";
 import { initDatabase } from "../database/connection.js";
@@ -65,7 +65,7 @@ async function testMultipleDownloads() {
   try {
     const results = await downloadImages(
       testUrls,
-      (url, index) => `./data/images/test/batch-${index}.jpg`,
+      (_url, index) => `./data/images/test/batch-${index}.jpg`,
       {
         maxRetries: 2,
         timeout: 10000,
