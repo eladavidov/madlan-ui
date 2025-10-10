@@ -26,10 +26,17 @@ export interface Property {
   address?: string | null;
   neighborhood?: string | null;
   city: string; // Required
+  latitude?: number | null; // Phase 5B: Map coordinates
+  longitude?: number | null; // Phase 5B: Map coordinates
 
   // Property Type & Details
   property_type?: PropertyType | null;
   description?: string | null;
+  neighborhood_description?: string | null; // Phase 5B: "החיים בשכונה"
+
+  // Phase 5B: Enhanced Property Metrics
+  price_per_sqm?: number | null; // Price per square meter in ₪
+  expected_yield?: number | null; // Expected rental yield percentage
 
   // Amenities (Boolean flags)
   has_parking?: boolean | null;
@@ -222,3 +229,90 @@ export type PropertyInput = Pick<Property, 'id' | 'url' | 'city'> & Partial<Omit
  * All fields optional except id
  */
 export type PropertyUpdate = Pick<Property, 'id'> & Partial<Omit<Property, 'id'>>;
+
+// ============================================================================
+// Phase 5B: Enhanced Data Models
+// ============================================================================
+
+/**
+ * Transaction History interface - matches transaction_history table
+ */
+export interface TransactionHistory {
+  id?: number; // Auto-increment, optional for new records
+  property_id: string;
+  transaction_address?: string | null;
+  transaction_date?: string | null; // DATE format: YYYY-MM-DD
+  transaction_price?: number | null; // In ₪
+  transaction_size?: number | null; // Square meters
+  transaction_price_per_sqm?: number | null; // Calculated: price / size
+  transaction_floor?: number | null;
+  transaction_rooms?: number | null;
+  year_built?: number | null;
+  created_at?: string;
+}
+
+/**
+ * Nearby School interface - matches nearby_schools table
+ */
+export interface NearbySchool {
+  id?: number; // Auto-increment, optional for new records
+  property_id: string;
+  school_name: string;
+  school_type?: string | null; // יסודי, תיכון, גן ילדים, etc.
+  grades_offered?: string | null; // א-ו, ז-יב, etc.
+  distance_meters?: number | null;
+  created_at?: string;
+}
+
+/**
+ * Neighborhood Ratings interface - matches neighborhood_ratings table
+ */
+export interface NeighborhoodRatings {
+  id?: number; // Auto-increment, optional for new records
+  property_id: string; // One rating set per property (UNIQUE)
+  community_feeling?: number | null; // 1-10: תחושת קהילה
+  cleanliness_maintenance?: number | null; // 1-10: נקיון ותחזוקה
+  schools_quality?: number | null; // 1-10: בתי ספר
+  public_transport?: number | null; // 1-10: תחבורה ציבורית
+  shopping_convenience?: number | null; // 1-10: קניות וסידורים
+  entertainment_leisure?: number | null; // 1-10: בילוי ופנאי
+  overall_rating?: number | null; // Overall score or weighted average
+  created_at?: string;
+}
+
+/**
+ * Price Comparison interface - matches price_comparisons table
+ */
+export interface PriceComparison {
+  id?: number; // Auto-increment, optional for new records
+  property_id: string;
+  room_count: number; // 3, 4, 5, etc.
+  average_price?: number | null; // Average price in ₪ for this room count
+  old_price?: number | null; // Previous average (if trend data available)
+  new_price?: number | null; // Current average (if trend data available)
+  price_trend?: string | null; // "up"/"down"/"stable" or percentage
+  created_at?: string;
+}
+
+/**
+ * Construction Project interface - matches new_construction_projects table
+ */
+export interface ConstructionProject {
+  id?: number; // Auto-increment, optional for new records
+  property_id: string;
+  project_name?: string | null;
+  project_location?: string | null;
+  distance_meters?: number | null;
+  project_status?: string | null; // תוכנית, בבניה, הושלם
+  completion_date?: string | null;
+  created_at?: string;
+}
+
+/**
+ * Input types for creating records
+ */
+export type TransactionHistoryInput = Omit<TransactionHistory, 'id' | 'created_at'>;
+export type NearbySchoolInput = Omit<NearbySchool, 'id' | 'created_at'>;
+export type NeighborhoodRatingsInput = Omit<NeighborhoodRatings, 'id' | 'created_at'>;
+export type PriceComparisonInput = Omit<PriceComparison, 'id' | 'created_at'>;
+export type ConstructionProjectInput = Omit<ConstructionProject, 'id' | 'created_at'>;

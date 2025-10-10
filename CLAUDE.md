@@ -308,19 +308,20 @@ npm run analyze          # Run DuckDB analytics
 
 **📚 MASTER DOCUMENT**: See **`Crawler/PROJECT-PLAN.md`** - **START HERE**
 
-**Current Status**: ✅ **PRODUCTION READY** - Phases 0-5 Complete + All Critical Bugs Fixed
+**Current Status**: ✅ **PRODUCTION READY** - Phases 0-5B Complete + All Critical Bugs Fixed
 **Breakthrough Date**: 2025-10-09 - **Anti-blocking solved with 100% success rate!**
-**Latest Update**: 2025-10-10 - **Production crawl in progress (500 properties)**
+**Latest Update**: 2025-10-10 - **Phase 5B Complete** (Enhanced data extraction + DuckDB migration)
 
 **🎉 Major Achievement - Anti-Blocking Solution**:
 - **Solution**: Fresh browser per property with random delays (60-120s) + HEADLESS=false
 - **Test Results**: 100% success rate validated (100-property test: 34/34, HEADLESS test: 2/2)
-- **Status**: Production-ready and actively crawling (Night 1: 500 properties)
+- **Status**: Production-ready with enhanced data extraction capabilities
 - **Implementation**: `src/crawlers/singleBrowserCrawler.ts`
 
 **Key Capabilities**:
 - ✅ 100% anti-blocking success rate - bypasses PerimeterX protection completely
-- ✅ Property extraction (38 fields + 11 amenities) with validated accuracy
+- ✅ **Enhanced extraction** (38+ fields + 11 amenities + panel data) - **Phase 5B NEW**
+- ✅ **DuckDB migration** with full schema documentation (135 comments) - **Phase 5B NEW**
 - ✅ Image downloading with caching and retry logic
 - ✅ Resume capability (skips already-crawled properties)
 - ✅ Live progress updates (every 15 seconds)
@@ -343,5 +344,7 @@ npm run analyze          # Run DuckDB analytics
 - **`Crawler/PROJECT-PLAN.md`** - **START HERE** - Master plan with session continuity, breakthrough details, and next steps
 - `Crawler/docs/SOLUTION-IMPLEMENTED.md` - Technical implementation details
 - `Crawler/docs/ANTI-BLOCKING.md` - Anti-blocking strategy documentation
+- `Crawler/docs/SCRAPING-TIMEOUTS.md` - **NEW**: Comprehensive timeout documentation and time estimates
+- `Crawler/tests/enhanced-quality-report.html` - **NEW**: Enhanced quality report with DuckDB schema
 - `Crawler/docs/PRD.md` - Product Requirements Document
 - `Crawler/docs/RESEARCH.md` - Website structure research

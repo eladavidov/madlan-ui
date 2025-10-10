@@ -34,6 +34,10 @@ export async function extractPropertyData(
     const size = await extractNumberByLabel(page, 'מ״ר');
     const totalFloors = await extractNumberByLabel(page, 'קומות בבניין');
 
+    // Extract enhanced property metrics (Phase 5B)
+    const pricePerSqm = await extractNumberByLabel(page, 'מחיר למ״ר');
+    const expectedYield = await extractNumberByLabel(page, 'תשואה');
+
     // Extract address (H1 contains full location)
     const addressFull = await extractText(page, PROPERTY_PAGE_SELECTORS.address);
     // Parse address: "רענן , כרמל ותיק, חיפה" -> street, neighborhood, city
@@ -51,6 +55,73 @@ export async function extractPropertyData(
         h2.textContent?.includes('תיאור הנכס')
       );
       return heading?.nextElementSibling?.textContent?.trim() || null;
+    });
+
+    // Extract neighborhood description (Phase 5B: "החיים בשכונה")
+    const neighborhoodDescription = await page.evaluate(() => {
+      const heading = Array.from(document.querySelectorAll('h2, h3')).find(h =>
+        h.textContent?.includes('החיים בשכונה')
+      );
+      if (!heading) return null;
+
+      // Try to find the description text (usually in next sibling or nearby element)
+      const nextElement = heading.nextElementSibling;
+      if (nextElement) {
+        const text = nextElement.textContent?.trim();
+        if (text && text.length > 20) { // Minimum length for valid description
+          return text;
+        }
+      }
+
+      // Try parent's next sibling
+      const parentNext = heading.parentElement?.nextElementSibling;
+      if (parentNext) {
+        const text = parentNext.textContent?.trim();
+        if (text && text.length > 20) {
+          return text;
+        }
+      }
+
+      return null;
+    });
+
+    // Extract map coordinates (Phase 5B)
+    const coordinates = await page.evaluate(() => {
+      try {
+        // Method 1: Check for Mapbox map data attributes or embedded data
+        const mapContainer = document.querySelector('[class*="map"], [class*="Map"]');
+        if (mapContainer) {
+          const dataLat = mapContainer.getAttribute('data-lat') || mapContainer.getAttribute('data-latitude');
+          const dataLng = mapContainer.getAttribute('data-lng') || mapContainer.getAttribute('data-longitude');
+          if (dataLat && dataLng) {
+            return {
+              latitude: parseFloat(dataLat),
+              longitude: parseFloat(dataLng)
+            };
+          }
+        }
+
+        // Method 2: Check for embedded JSON data (common pattern in SPAs)
+        const scripts = Array.from(document.querySelectorAll('script'));
+        for (const script of scripts) {
+          const content = script.textContent || '';
+          // Look for latitude/longitude patterns in JSON
+          const latMatch = content.match(/"latitude"\s*:\s*([\d.]+)/i);
+          const lngMatch = content.match(/"longitude"\s*:\s*([\d.]+)/i);
+          if (latMatch && lngMatch) {
+            const lat = parseFloat(latMatch[1]);
+            const lng = parseFloat(lngMatch[1]);
+            // Validate coordinates are in Israel's approximate range
+            if (lat >= 29 && lat <= 34 && lng >= 34 && lng <= 36) {
+              return { latitude: lat, longitude: lng };
+            }
+          }
+        }
+
+        return { latitude: null, longitude: null };
+      } catch (error) {
+        return { latitude: null, longitude: null };
+      }
     });
 
     // Extract amenities (text-based detection)
@@ -85,6 +156,13 @@ export async function extractPropertyData(
       size: size ?? undefined,
       floor: floor ?? undefined,
       total_floors: totalFloors ?? undefined,
+      // Phase 5B: Enhanced property metrics
+      price_per_sqm: pricePerSqm ?? undefined,
+      expected_yield: expectedYield ?? undefined,
+      latitude: coordinates.latitude ?? undefined,
+      longitude: coordinates.longitude ?? undefined,
+      neighborhood_description: neighborhoodDescription ?? undefined,
+      // End Phase 5B additions
       address: address ?? undefined,
       neighborhood: neighborhood ?? undefined,
       property_type: (propertyTypeRaw as any) ?? undefined,

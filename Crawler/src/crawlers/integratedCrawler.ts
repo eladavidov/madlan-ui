@@ -71,7 +71,7 @@ export async function runFullCrawl(
 
   try {
     // Initialize database
-    logger.info("Initializing database...");
+    logger.info("Initializing DuckDB database...");
     const db = await initDatabase(dbPath);
     const sessionRepo = new CrawlSessionRepository(db);
 
