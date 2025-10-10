@@ -194,29 +194,56 @@ async function extractNumberByLabel(page: Page, labelText: string): Promise<numb
       // Find all elements
       const elements = Array.from(document.querySelectorAll('*'));
 
-      // Find element with label text
+      // Find element with label text (exact match, no children)
       const labelEl = elements.find(el =>
         el.textContent?.trim() === label && el.children.length === 0
       );
 
       if (!labelEl) return null;
 
-      // Check previous sibling for value
+      // Strategy 1: Check next sibling first (value often comes after label in RTL)
+      const nextSibling = labelEl.nextElementSibling;
+      if (nextSibling && nextSibling.children.length === 0) {
+        const text = nextSibling.textContent?.trim();
+        // Validate it looks like a number
+        if (text && /^\d+\.?\d*$/.test(text)) {
+          return text;
+        }
+      }
+
+      // Strategy 2: Check previous sibling
       const prevSibling = labelEl.previousElementSibling;
       if (prevSibling && prevSibling.children.length === 0) {
         const text = prevSibling.textContent?.trim();
-        if (text) return text;
+        // Validate it looks like a number
+        if (text && /^\d+\.?\d*$/.test(text)) {
+          return text;
+        }
       }
 
-      // Check if value is in same parent container
+      // Strategy 3: Look in parent container for a sibling with specific class
+      // Madlan uses .css-1d9zsyn.e188cvy02 for numeric values
       const parent = labelEl.parentElement;
       if (parent) {
-        const valueEl = Array.from(parent.children).find(child =>
-          child !== labelEl &&
-          child.children.length === 0 &&
-          /^\d+\.?\d*$/.test(child.textContent?.trim() || '')
-        );
-        if (valueEl) return valueEl.textContent?.trim() || null;
+        // First, try to find by specific class (more reliable)
+        const valueWithClass = parent.querySelector('.css-1d9zsyn, .e188cvy02');
+        if (valueWithClass && valueWithClass !== labelEl) {
+          const text = valueWithClass.textContent?.trim();
+          if (text && /^\d+\.?\d*$/.test(text)) {
+            return text;
+          }
+        }
+
+        // Fallback: Find first numeric child in parent (excluding label)
+        // But only if parent has 2-3 children (to avoid picking random numbers)
+        if (parent.children.length >= 2 && parent.children.length <= 3) {
+          const valueEl = Array.from(parent.children).find(child =>
+            child !== labelEl &&
+            child.children.length === 0 &&
+            /^\d+\.?\d*$/.test(child.textContent?.trim() || '')
+          );
+          if (valueEl) return valueEl.textContent?.trim() || null;
+        }
       }
 
       return null;
@@ -227,6 +254,28 @@ async function extractNumberByLabel(page: Page, labelText: string): Promise<numb
     // Parse number
     const cleaned = value.replace(/[^\d.]/g, "");
     const number = parseFloat(cleaned);
+
+    // Additional validation for specific fields to prevent wrong values
+    if (labelText === 'חדרים') {
+      // Rooms should be 0.5-20 (reasonable range)
+      if (number < 0.5 || number > 20) {
+        console.warn(`Suspicious rooms value: ${number} (expected 0.5-20)`);
+        return null;
+      }
+    } else if (labelText === 'קומה') {
+      // Floor should be -2 to 100 (basement to high-rise)
+      if (number < -2 || number > 100) {
+        console.warn(`Suspicious floor value: ${number} (expected -2 to 100)`);
+        return null;
+      }
+    } else if (labelText === 'מ״ר') {
+      // Size should be 10-1000 m² (reasonable apartment range)
+      if (number < 10 || number > 1000) {
+        console.warn(`Suspicious size value: ${number} (expected 10-1000)`);
+        return null;
+      }
+    }
+
     return isNaN(number) ? null : number;
   } catch (error) {
     return null;

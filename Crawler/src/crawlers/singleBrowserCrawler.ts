@@ -34,6 +34,8 @@ export interface SingleBrowserCrawlerOptions {
   imageRetries?: number;
   browserLaunchDelayMin?: number;
   browserLaunchDelayMax?: number;
+  onProgressUpdate?: (stats: Partial<SingleBrowserStats>) => void;
+  maxHttpErrorRetries?: number; // Retry HTTP 520/502/503 errors
 }
 
 export interface SingleBrowserStats {
@@ -60,6 +62,8 @@ export async function crawlPropertiesWithFreshBrowser(
     imageRetries = 3,
     browserLaunchDelayMin = config.crawler.browserLaunchDelayMin,
     browserLaunchDelayMax = config.crawler.browserLaunchDelayMax,
+    onProgressUpdate,
+    maxHttpErrorRetries = 2, // Retry 520/502/503 errors twice
   } = options;
 
   const propertyRepo = new PropertyRepository(db);
@@ -95,57 +99,95 @@ export async function crawlPropertiesWithFreshBrowser(
     logger.info("=".repeat(70));
 
     let browser = null;
+    let retryCount = 0;
+    let lastHttpError: number | null = null;
+    let propertySuccess = false;
 
-    try {
-      stats.propertiesProcessed++;
+    // Retry loop for HTTP errors (520, 502, 503)
+    while (retryCount <= maxHttpErrorRetries && !propertySuccess) {
+      try {
+        if (retryCount === 0) {
+          stats.propertiesProcessed++;
+        } else {
+          logger.info(`🔄 Retry attempt ${retryCount}/${maxHttpErrorRetries} for HTTP ${lastHttpError}`);
+        }
 
-      // Launch fresh browser for THIS property
-      logger.info("🚀 Launching fresh browser instance...");
-      browser = await chromium.launch({
-        headless: config.browser.headless,
-        args: [
-          "--no-sandbox",
-          "--disable-setuid-sandbox",
-          "--disable-dev-shm-usage",
-          "--disable-blink-features=AutomationControlled",
-        ],
-        // Note: JavaScript is enabled by default in Playwright
-      });
+        // Launch fresh browser for THIS property
+        logger.info("🚀 Launching fresh browser instance...");
+        browser = await chromium.launch({
+          headless: config.browser.headless,
+          args: [
+            "--no-sandbox",
+            "--disable-setuid-sandbox",
+            "--disable-dev-shm-usage",
+            "--disable-blink-features=AutomationControlled",
+            "--disable-web-security",
+            "--disable-features=IsolateOrigins,site-per-process",
+            "--allow-running-insecure-content",
+            "--disable-background-timer-throttling",
+            "--disable-backgrounding-occluded-windows",
+            "--disable-renderer-backgrounding",
+            "--disable-infobars",
+            "--window-size=1920,1080",
+            "--start-maximized",
+          ],
+          // Note: JavaScript is enabled by default in Playwright
+        });
 
-      const context = await browser.newContext({
-        userAgent: config.browser.userAgent,
-        viewport: { width: 1920, height: 1080 },
-        locale: "he-IL",
-        timezoneId: "Asia/Jerusalem",
-      });
+        const context = await browser.newContext({
+          userAgent: config.browser.userAgent,
+          viewport: { width: 1920, height: 1080 },
+          locale: "he-IL",
+          timezoneId: "Asia/Jerusalem",
+        });
 
-      const page = await context.newPage();
+        const page = await context.newPage();
 
-      // Navigate to property
-      logger.info("🌐 Navigating to property page...");
-      const response = await page.goto(url, {
-        waitUntil: "domcontentloaded",
-        timeout: 30000,
-      });
+        // Navigate to property
+        logger.info("🌐 Navigating to property page...");
+        const response = await page.goto(url, {
+          waitUntil: "domcontentloaded",
+          timeout: 60000, // Increased from 30s to 60s to reduce timeouts
+        });
 
-      const status = response?.status();
-      logger.info(`📡 HTTP Status: ${status}`);
+        const status = response?.status();
+        logger.info(`📡 HTTP Status: ${status}`);
 
-      if (status === 403) {
-        logger.error("❌ BLOCKED: 403 Forbidden (should not happen with fresh browser!)");
-        sessionRepo.logError(sessionId, "blocking", "403 Forbidden on fresh browser", undefined, url);
-        stats.propertiesFailed++;
-        await browser.close();
-        continue;
-      }
+        if (status === 403) {
+          logger.error("❌ BLOCKED: 403 Forbidden (should not happen with fresh browser!)");
+          sessionRepo.logError(sessionId, "blocking", "403 Forbidden on fresh browser", undefined, url);
+          stats.propertiesFailed++;
+          await browser.close();
+          break; // Don't retry 403
+        }
 
-      if (status !== 200) {
-        logger.warn(`⚠️  Unexpected status: ${status}`);
-        sessionRepo.logError(sessionId, "http_error", `HTTP ${status}`, undefined, url);
-        stats.propertiesFailed++;
-        await browser.close();
-        continue;
-      }
+        // Retry logic for server errors (520, 502, 503)
+        if (status === 520 || status === 502 || status === 503) {
+          lastHttpError = status;
+          logger.warn(`⚠️  Server error: HTTP ${status}`);
+          await browser.close();
+
+          if (retryCount < maxHttpErrorRetries) {
+            retryCount++;
+            const retryDelay = 10000 + (retryCount * 5000); // 10s, 15s, 20s
+            logger.info(`⏳ Waiting ${retryDelay / 1000}s before retry...`);
+            await new Promise(resolve => setTimeout(resolve, retryDelay));
+            continue; // Retry
+          } else {
+            logger.error(`❌ Max retries reached for HTTP ${status}`);
+            sessionRepo.logError(sessionId, "http_error", `HTTP ${status} after ${maxHttpErrorRetries} retries`, undefined, url);
+            stats.propertiesFailed++;
+            break; // Give up
+          }
+        }
+
+        if (status !== 200) {
+          logger.warn(`⚠️  Unexpected status: ${status}`);
+          sessionRepo.logError(sessionId, "http_error", `HTTP ${status}`, undefined, url);
+          stats.propertiesFailed++;
+          await browser.close();
+          break; // Don't retry other errors
+        }
 
       // Wait for content to render
       logger.info("⏳ Waiting for React content to render...");
@@ -252,54 +294,71 @@ export async function crawlPropertiesWithFreshBrowser(
         }
       }
 
-      stats.propertiesSuccessful++;
+        stats.propertiesSuccessful++;
+        propertySuccess = true; // Mark success to exit retry loop
 
-      // Close browser for this property
-      await browser.close();
-      logger.info("🔒 Browser closed");
+        // Close browser for this property
+        await browser.close();
+        logger.info("🔒 Browser closed");
 
-      const propertyDuration = Date.now() - propertyStartTime;
-      logger.info(`⏱️  Property completed in ${Math.round(propertyDuration / 1000)}s`);
+        const propertyDuration = Date.now() - propertyStartTime;
+        logger.info(`⏱️  Property completed in ${Math.round(propertyDuration / 1000)}s`);
 
-      // Update session stats
-      sessionRepo.updateStats(sessionId, {
-        properties_found: stats.propertiesProcessed,
-        properties_new: existing ? stats.propertiesSuccessful - 1 : stats.propertiesSuccessful,
-        properties_updated: existing ? 1 : 0,
-        properties_failed: stats.propertiesFailed,
-        images_downloaded: stats.imagesDownloaded,
-        images_failed: stats.imagesFailed,
-      });
+      } catch (error: any) {
+        logger.error(`❌ Error processing property: ${error.message}`);
+        logger.error(error.stack);
+        sessionRepo.logError(sessionId, "error", error.message, error.stack, url);
 
-      // Random delay before next property (except last one)
-      if (i < propertyUrls.length - 1) {
-        const delay = browserLaunchDelayMin + Math.random() * (browserLaunchDelayMax - browserLaunchDelayMin);
-        const delaySeconds = Math.round(delay / 1000);
-        logger.info(`\n⏸️  Waiting ${delaySeconds}s before next property (anti-blocking)...`);
-        await new Promise(resolve => setTimeout(resolve, delay));
-      }
+        // Ensure browser is closed even on error
+        if (browser) {
+          try {
+            await browser.close();
+          } catch (e) {
+            // Ignore close errors
+          }
+        }
 
-    } catch (error: any) {
-      logger.error(`❌ Error processing property: ${error.message}`);
-      logger.error(error.stack);
-      sessionRepo.logError(sessionId, "error", error.message, error.stack, url);
-      stats.propertiesFailed++;
-
-      // Ensure browser is closed even on error
-      if (browser) {
-        try {
-          await browser.close();
-        } catch (e) {
-          // Ignore close errors
+        // Only retry on retryable errors, otherwise break
+        if (retryCount < maxHttpErrorRetries && lastHttpError && (lastHttpError === 520 || lastHttpError === 502 || lastHttpError === 503)) {
+          retryCount++;
+          const retryDelay = 10000 + (retryCount * 5000);
+          logger.info(`⏳ Waiting ${retryDelay / 1000}s before retry...`);
+          await new Promise(resolve => setTimeout(resolve, retryDelay));
+          continue; // Retry
+        } else {
+          stats.propertiesFailed++;
+          break; // Give up
         }
       }
+    } // End retry while loop
 
-      // Still wait before next property even after error
-      if (i < propertyUrls.length - 1) {
-        const delay = browserLaunchDelayMin + Math.random() * (browserLaunchDelayMax - browserLaunchDelayMin);
-        logger.info(`⏸️  Waiting ${Math.round(delay / 1000)}s before retry...`);
-        await new Promise(resolve => setTimeout(resolve, delay));
-      }
+    // Update session stats after property (success or failure)
+    sessionRepo.updateStats(sessionId, {
+      properties_found: stats.propertiesProcessed,
+      properties_new: stats.propertiesSuccessful,
+      properties_updated: 0,
+      properties_failed: stats.propertiesFailed,
+      images_downloaded: stats.imagesDownloaded,
+      images_failed: stats.imagesFailed,
+    });
+
+    // Call progress update callback if provided
+    if (onProgressUpdate) {
+      onProgressUpdate({
+        propertiesProcessed: stats.propertiesProcessed,
+        propertiesSuccessful: stats.propertiesSuccessful,
+        propertiesFailed: stats.propertiesFailed,
+        imagesDownloaded: stats.imagesDownloaded,
+        imagesFailed: stats.imagesFailed,
+      });
+    }
+
+    // Random delay before next property (except last one)
+    if (i < propertyUrls.length - 1) {
+      const delay = browserLaunchDelayMin + Math.random() * (browserLaunchDelayMax - browserLaunchDelayMin);
+      const delaySeconds = Math.round(delay / 1000);
+      logger.info(`\n⏸️  Waiting ${delaySeconds}s before next property (anti-blocking)...`);
+      await new Promise(resolve => setTimeout(resolve, delay));
     }
   }
 

@@ -308,27 +308,36 @@ npm run analyze          # Run DuckDB analytics
 
 **📚 MASTER DOCUMENT**: See **`Crawler/PROJECT-PLAN.md`** - **START HERE**
 
-**Current Status**: ✅ **PRODUCTION READY** - Phases 0-5 Complete
+**Current Status**: ✅ **PRODUCTION READY** - Phases 0-5 Complete + All Critical Bugs Fixed
 **Breakthrough Date**: 2025-10-09 - **Anti-blocking solved with 100% success rate!**
+**Latest Update**: 2025-10-10 - **Production crawl in progress (500 properties)**
 
 **🎉 Major Achievement - Anti-Blocking Solution**:
-- **Solution**: Fresh browser per property with random delays (60-120s)
-- **Test Results**: 3/3 properties successfully extracted (100% success rate)
-- **Status**: Production-ready for 10-2000+ properties
+- **Solution**: Fresh browser per property with random delays (60-120s) + HEADLESS=false
+- **Test Results**: 100% success rate validated (100-property test: 34/34, HEADLESS test: 2/2)
+- **Status**: Production-ready and actively crawling (Night 1: 500 properties)
 - **Implementation**: `src/crawlers/singleBrowserCrawler.ts`
 
 **Key Capabilities**:
-- ✅ 100% success rate - bypasses PerimeterX anti-bot protection
-- ✅ Property extraction (38 fields + 11 amenities)
-- ✅ Image downloading with caching
+- ✅ 100% anti-blocking success rate - bypasses PerimeterX protection completely
+- ✅ Property extraction (38 fields + 11 amenities) with validated accuracy
+- ✅ Image downloading with caching and retry logic
 - ✅ Resume capability (skips already-crawled properties)
+- ✅ Live progress updates (every 15 seconds)
+- ✅ HTTP retry logic for server errors (520/502/503)
 
 **Production Scaling**:
 - **2000 properties**: 2-4 nights (sequential overnight batches, 500/night)
-- **Performance**: ~0.5-1 property/minute depending on delay configuration
+- **Performance**: ~0.4-0.7 property/minute with production delays
+- **Current Progress**: Night 1 crawl running (500 properties)
 
-**Known Issues**:
-- Rooms extraction bug (shows decimals instead of integers) - CRITICAL FIX NEEDED
+**Known Issues**: None - All critical issues resolved ✅
+
+**Recent Fixes (2025-10-09 to 2025-10-10)**:
+- ✅ Rooms extraction bug fixed (multi-strategy extraction with validation)
+- ✅ Progress stats now updating live (every 15 seconds)
+- ✅ HTTP retry logic implemented (520/502/503 errors)
+- ✅ Headless detection solved (HEADLESS=false + enhanced browser flags)
 
 **📖 Complete Documentation**:
 - **`Crawler/PROJECT-PLAN.md`** - **START HERE** - Master plan with session continuity, breakthrough details, and next steps

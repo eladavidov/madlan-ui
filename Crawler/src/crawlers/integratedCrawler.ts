@@ -107,6 +107,17 @@ export async function runFullCrawl(
         downloadImages,
         imageTimeout,
         imageRetries,
+        // Update progress reporter after each property
+        onProgressUpdate: (partialStats) => {
+          progressReporter.updateStats({
+            propertiesFound: partialStats.propertiesProcessed || 0,
+            propertiesNew: partialStats.propertiesSuccessful || 0,
+            propertiesUpdated: 0,
+            propertiesFailed: partialStats.propertiesFailed || 0,
+            imagesDownloaded: partialStats.imagesDownloaded || 0,
+            imagesFailed: partialStats.imagesFailed || 0,
+          });
+        },
       });
 
       // Convert stats format
