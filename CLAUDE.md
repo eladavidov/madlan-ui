@@ -308,37 +308,42 @@ npm run analyze          # Run DuckDB analytics
 
 **📚 MASTER DOCUMENT**: See **`Crawler/PROJECT-PLAN.md`** - **START HERE**
 
-**Current Status**: ✅ **PRODUCTION READY** - Phases 0-5B Complete + All Critical Bugs Fixed
+**Current Status**: ✅ **PRODUCTION READY** - Phases 0-5C Complete + All Critical Bugs Fixed
 **Breakthrough Date**: 2025-10-09 - **Anti-blocking solved with 100% success rate!**
-**Latest Update**: 2025-10-10 - **Phase 5B Complete** (Enhanced data extraction + DuckDB migration)
+**Latest Update**: 2025-10-10 (Evening) - **Phase 5C Complete** (DuckDB-only architecture + Manual ID generation)
 
 **🎉 Major Achievement - Anti-Blocking Solution**:
 - **Solution**: Fresh browser per property with random delays (60-120s) + HEADLESS=false
 - **Test Results**: 100% success rate validated (100-property test: 34/34, HEADLESS test: 2/2)
-- **Status**: Production-ready with enhanced data extraction capabilities
+- **Status**: Production-ready with DuckDB-only architecture
 - **Implementation**: `src/crawlers/singleBrowserCrawler.ts`
 
 **Key Capabilities**:
 - ✅ 100% anti-blocking success rate - bypasses PerimeterX protection completely
-- ✅ **Enhanced extraction** (38+ fields + 11 amenities + panel data) - **Phase 5B NEW**
-- ✅ **DuckDB migration** with full schema documentation (135 comments) - **Phase 5B NEW**
+- ✅ **DuckDB-only architecture** - Simplified from dual SQLite+DuckDB to single database (Phase 5C)
+- ✅ **Manual ID generation** - Fixed DuckDB schema (removed sequences, using manual IDs)
+- ✅ **Enhanced extraction** (38+ fields + 11 amenities + panel data)
 - ✅ Image downloading with caching and retry logic
-- ✅ Resume capability (skips already-crawled properties)
-- ✅ Live progress updates (every 15 seconds)
+- ✅ Resume capability (upserts existing properties, skips already-downloaded images)
+- ✅ **Live progress updates** (every 15 seconds) - Verified working
 - ✅ HTTP retry logic for server errors (520/502/503)
 
 **Production Scaling**:
-- **2000 properties**: 2-4 nights (sequential overnight batches, 500/night)
-- **Performance**: ~0.4-0.7 property/minute with production delays
-- **Current Progress**: Night 1 crawl running (500 properties)
+- **3000 properties**: 2-4 nights (sequential overnight batches, 500-1000/night)
+- **Performance**: ~0.4-0.7 property/minute with production delays (60-120s)
+- **Ready for deployment**: All systems verified and tested
 
-**Known Issues**: None - All critical issues resolved ✅
+**Known Issues**:
+- ⚠️ **BLOB image storage**: Optimization needed for bulk image downloads (may hang on large batches)
+- **Workaround**: Can disable image downloads for initial large crawl, add images later in smaller batches
 
-**Recent Fixes (2025-10-09 to 2025-10-10)**:
-- ✅ Rooms extraction bug fixed (multi-strategy extraction with validation)
-- ✅ Progress stats now updating live (every 15 seconds)
-- ✅ HTTP retry logic implemented (520/502/503 errors)
-- ✅ Headless detection solved (HEADLESS=false + enhanced browser flags)
+**Recent Fixes & Updates (2025-10-10 Evening)**:
+- ✅ Phase 5C: Removed SQLite support (DuckDB-only architecture)
+- ✅ Fixed DuckDB schema (removed sequences, using manual ID generation)
+- ✅ Updated all repositories for manual ID generation
+- ✅ Verified monitoring capabilities (progress updates, logging, session tracking)
+- ✅ Verified resume capability (upserts properties, skips images)
+- ✅ Cleaned up Crawler directory (removed obsolete files, logs, storage)
 
 **📖 Complete Documentation**:
 - **`Crawler/PROJECT-PLAN.md`** - **START HERE** - Master plan with session continuity, breakthrough details, and next steps
