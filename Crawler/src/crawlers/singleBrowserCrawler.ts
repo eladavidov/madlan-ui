@@ -23,7 +23,7 @@ import { CrawlSessionRepository } from "../database/repositories/CrawlSessionRep
 import { ImageStore } from "../storage/imageStore.js";
 import { logger } from "../utils/logger.js";
 import { config } from "../utils/config.js";
-import type { DatabaseConnection } from "../database/connection.js";
+import type { DuckDBConnection } from "../database/connectionDuckDB.js";
 
 // Enable stealth plugin
 chromium.use(StealthPlugin());
@@ -51,7 +51,7 @@ export interface SingleBrowserStats {
  * Crawl properties using fresh browser per property (anti-blocking)
  */
 export async function crawlPropertiesWithFreshBrowser(
-  db: DatabaseConnection,
+  db: DuckDBConnection,
   propertyUrls: string[],
   sessionId: string,
   options: SingleBrowserCrawlerOptions = {}
@@ -155,7 +155,7 @@ export async function crawlPropertiesWithFreshBrowser(
 
         if (status === 403) {
           logger.error("❌ BLOCKED: 403 Forbidden (should not happen with fresh browser!)");
-          sessionRepo.logError(sessionId, "blocking", "403 Forbidden on fresh browser", undefined, url);
+          await sessionRepo.logError(sessionId, "blocking", "403 Forbidden on fresh browser", undefined, url);
           stats.propertiesFailed++;
           await browser.close();
           break; // Don't retry 403
@@ -175,7 +175,7 @@ export async function crawlPropertiesWithFreshBrowser(
             continue; // Retry
           } else {
             logger.error(`❌ Max retries reached for HTTP ${status}`);
-            sessionRepo.logError(sessionId, "http_error", `HTTP ${status} after ${maxHttpErrorRetries} retries`, undefined, url);
+            await sessionRepo.logError(sessionId, "http_error", `HTTP ${status} after ${maxHttpErrorRetries} retries`, undefined, url);
             stats.propertiesFailed++;
             break; // Give up
           }
@@ -183,7 +183,7 @@ export async function crawlPropertiesWithFreshBrowser(
 
         if (status !== 200) {
           logger.warn(`⚠️  Unexpected status: ${status}`);
-          sessionRepo.logError(sessionId, "http_error", `HTTP ${status}`, undefined, url);
+          await sessionRepo.logError(sessionId, "http_error", `HTTP ${status}`, undefined, url);
           stats.propertiesFailed++;
           await browser.close();
           break; // Don't retry other errors
@@ -220,7 +220,7 @@ export async function crawlPropertiesWithFreshBrowser(
 
       if (hasCaptcha) {
         logger.warn("🛑 CAPTCHA detected (unexpected with fresh browser)");
-        sessionRepo.logError(sessionId, "captcha", "CAPTCHA on fresh browser", undefined, url);
+        await sessionRepo.logError(sessionId, "captcha", "CAPTCHA on fresh browser", undefined, url);
         stats.propertiesFailed++;
         await browser.close();
         continue;
@@ -235,7 +235,7 @@ export async function crawlPropertiesWithFreshBrowser(
 
       if (!propertyData) {
         logger.error("❌ Extraction failed");
-        sessionRepo.logError(sessionId, "extraction", "extractPropertyData returned null", undefined, url);
+        await sessionRepo.logError(sessionId, "extraction", "extractPropertyData returned null", undefined, url);
         stats.propertiesFailed++;
         await browser.close();
         continue;
@@ -246,10 +246,10 @@ export async function crawlPropertiesWithFreshBrowser(
       logger.info(`   Rooms: ${propertyData.rooms || "N/A"}, Size: ${propertyData.size || "N/A"}m²`);
 
       // Check if property exists
-      const existing = propertyRepo.findById(propertyData.id);
+      const existing = await propertyRepo.findById(propertyData.id);
 
       // Save to database
-      propertyRepo.upsert(propertyData);
+      await propertyRepo.upsert(propertyData);
 
       if (existing) {
         logger.info(`📝 Updated existing property`);
@@ -263,7 +263,7 @@ export async function crawlPropertiesWithFreshBrowser(
 
       if (imageUrls.length > 0) {
         // Delete old image records
-        imageRepo.deleteByPropertyId(propertyData.id);
+        await imageRepo.deleteByPropertyId(propertyData.id);
 
         // Download images if enabled
         if (downloadImages) {
@@ -290,7 +290,7 @@ export async function crawlPropertiesWithFreshBrowser(
             image_order: index,
             is_main_image: index === 0,
           }));
-          imageRepo.insertMany(images);
+          await imageRepo.insertMany(images);
         }
       }
 
@@ -307,7 +307,7 @@ export async function crawlPropertiesWithFreshBrowser(
       } catch (error: any) {
         logger.error(`❌ Error processing property: ${error.message}`);
         logger.error(error.stack);
-        sessionRepo.logError(sessionId, "error", error.message, error.stack, url);
+        await sessionRepo.logError(sessionId, "error", error.message, error.stack, url);
 
         // Ensure browser is closed even on error
         if (browser) {
@@ -333,7 +333,7 @@ export async function crawlPropertiesWithFreshBrowser(
     } // End retry while loop
 
     // Update session stats after property (success or failure)
-    sessionRepo.updateStats(sessionId, {
+    await sessionRepo.updateStats(sessionId, {
       properties_found: stats.propertiesProcessed,
       properties_new: stats.propertiesSuccessful,
       properties_updated: 0,

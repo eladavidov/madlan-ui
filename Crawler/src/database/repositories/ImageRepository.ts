@@ -1,27 +1,35 @@
 /**
  * Image Repository
  * CRUD operations for property_images table
+ * Updated to support BLOB storage in DuckDB
  */
 
-import type { DatabaseConnection } from "../connection.js";
+import type { DuckDBConnection } from "../connectionDuckDB.js";
 import type { PropertyImage } from "../../models/Property.js";
 
 export class ImageRepository {
-  constructor(private db: DatabaseConnection) {}
+  constructor(private db: DuckDBConnection) {}
 
   /**
-   * Insert a new image
+   * Insert a new image with optional BLOB data
    */
-  public insert(image: Omit<PropertyImage, "id" | "created_at">): number {
+  public async insert(image: Omit<PropertyImage, "id" | "created_at"> & { image_data?: Buffer }): Promise<number> {
+    // Generate next ID manually for DuckDB
+    const nextIdResult = await this.db.queryOne<{ nextId: number }>(
+      "SELECT COALESCE(MAX(id), 0) + 1 as nextId FROM property_images"
+    );
+    const nextId = nextIdResult?.nextId || 1;
+
     const sql = `
       INSERT INTO property_images (
-        property_id, image_url, image_order, is_main_image,
-        image_type, width, height, file_size
+        id, property_id, image_url, image_order, is_main_image,
+        image_type, width, height, file_size, image_data
       )
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
 
-    const result = this.db.execute(sql, [
+    await this.db.execute(sql, [
+      nextId,
       image.property_id,
       image.image_url,
       image.image_order,
@@ -30,18 +38,19 @@ export class ImageRepository {
       image.width ?? null,
       image.height ?? null,
       image.file_size ?? null,
+      image.image_data ?? null,
     ]);
 
-    return result.lastInsertRowid as number;
+    return nextId;
   }
 
   /**
    * Insert multiple images for a property
    */
-  public insertMany(images: Omit<PropertyImage, "id" | "created_at">[]): void {
-    this.db.transaction(() => {
+  public async insertMany(images: (Omit<PropertyImage, "id" | "created_at"> & { image_data?: Buffer })[]): Promise<void> {
+    await this.db.transaction(async () => {
       for (const image of images) {
-        this.insert(image);
+        await this.insert(image);
       }
     });
   }
@@ -49,7 +58,7 @@ export class ImageRepository {
   /**
    * Find all images for a property
    */
-  public findByPropertyId(propertyId: string): PropertyImage[] {
+  public async findByPropertyId(propertyId: string): Promise<PropertyImage[]> {
     return this.db.query<PropertyImage>(
       `SELECT * FROM property_images
        WHERE property_id = ?
@@ -61,7 +70,7 @@ export class ImageRepository {
   /**
    * Find main image for a property
    */
-  public findMainImage(propertyId: string): PropertyImage | undefined {
+  public async findMainImage(propertyId: string): Promise<PropertyImage | undefined> {
     return this.db.queryOne<PropertyImage>(
       `SELECT * FROM property_images
        WHERE property_id = ? AND is_main_image = 1
@@ -71,26 +80,26 @@ export class ImageRepository {
   }
 
   /**
-   * Update download status
+   * Update download status with BLOB data
    */
-  public updateDownloadStatus(
+  public async updateDownloadStatus(
     id: number,
     success: boolean,
-    localPath?: string,
+    imageData?: Buffer,
     error?: string
-  ): void {
+  ): Promise<void> {
     const sql = `
       UPDATE property_images
       SET is_downloaded = ?,
-          local_path = ?,
-          download_date = datetime('now'),
+          image_data = ?,
+          download_date = CURRENT_TIMESTAMP,
           download_error = ?
       WHERE id = ?
     `;
 
-    this.db.execute(sql, [
+    await this.db.execute(sql, [
       success ? 1 : 0,
-      localPath || null,
+      imageData || null,
       error || null,
       id,
     ]);
@@ -99,7 +108,7 @@ export class ImageRepository {
   /**
    * Find images that need downloading
    */
-  public findPendingDownloads(limit?: number): PropertyImage[] {
+  public async findPendingDownloads(limit?: number): Promise<PropertyImage[]> {
     let sql = `
       SELECT * FROM property_images
       WHERE is_downloaded = 0
@@ -116,8 +125,8 @@ export class ImageRepository {
   /**
    * Count images for a property
    */
-  public countByPropertyId(propertyId: string): number {
-    const result = this.db.queryOne<{ count: number }>(
+  public async countByPropertyId(propertyId: string): Promise<number> {
+    const result = await this.db.queryOne<{ count: number }>(
       "SELECT COUNT(*) as count FROM property_images WHERE property_id = ?",
       [propertyId]
     );
@@ -127,8 +136,8 @@ export class ImageRepository {
   /**
    * Count downloaded images for a property
    */
-  public countDownloadedByPropertyId(propertyId: string): number {
-    const result = this.db.queryOne<{ count: number }>(
+  public async countDownloadedByPropertyId(propertyId: string): Promise<number> {
+    const result = await this.db.queryOne<{ count: number }>(
       `SELECT COUNT(*) as count FROM property_images
        WHERE property_id = ? AND is_downloaded = 1`,
       [propertyId]
@@ -139,8 +148,8 @@ export class ImageRepository {
   /**
    * Delete all images for a property
    */
-  public deleteByPropertyId(propertyId: string): void {
-    this.db.execute("DELETE FROM property_images WHERE property_id = ?", [
+  public async deleteByPropertyId(propertyId: string): Promise<void> {
+    await this.db.execute("DELETE FROM property_images WHERE property_id = ?", [
       propertyId,
     ]);
   }
@@ -148,13 +157,13 @@ export class ImageRepository {
   /**
    * Get image statistics
    */
-  public getStats(): {
+  public async getStats(): Promise<{
     total: number;
     downloaded: number;
     pending: number;
     failed: number;
-  } {
-    const result = this.db.queryOne<{
+  }> {
+    const result = await this.db.queryOne<{
       total: number;
       downloaded: number;
       failed: number;
@@ -172,5 +181,28 @@ export class ImageRepository {
       pending: (result?.total || 0) - (result?.downloaded || 0),
       failed: result?.failed || 0,
     };
+  }
+
+  /**
+   * Get image BLOB data
+   */
+  public async getImageData(id: number): Promise<Buffer | null> {
+    const result = await this.db.queryOne<{ image_data: Buffer }>(
+      "SELECT image_data FROM property_images WHERE id = ?",
+      [id]
+    );
+    return result?.image_data || null;
+  }
+
+  /**
+   * Get all image data for a property
+   */
+  public async getPropertyImageData(propertyId: string): Promise<{ id: number; image_order: number; image_data: Buffer | null }[]> {
+    return this.db.query<{ id: number; image_order: number; image_data: Buffer | null }>(
+      `SELECT id, image_order, image_data FROM property_images
+       WHERE property_id = ?
+       ORDER BY image_order ASC`,
+      [propertyId]
+    );
   }
 }

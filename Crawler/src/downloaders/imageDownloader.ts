@@ -1,11 +1,9 @@
 /**
  * Image Downloader
- * Downloads images with retry logic and metadata extraction
+ * Downloads images to memory (Buffer) with retry logic and metadata extraction
+ * Updated to support BLOB storage in database
  */
 
-import { createWriteStream, existsSync, mkdirSync, unlinkSync, statSync } from "fs";
-import { dirname } from "path";
-import { pipeline } from "stream/promises";
 import { sleep } from "../utils/sleep.js";
 import { logger } from "../utils/logger.js";
 
@@ -17,18 +15,19 @@ export interface ImageDownloadOptions {
 
 export interface ImageDownloadResult {
   success: boolean;
-  localPath?: string;
+  imageData?: Buffer;
   fileSize?: number;
   error?: string;
   contentType?: string;
+  width?: number;
+  height?: number;
 }
 
 /**
- * Download an image from URL and save to local filesystem
+ * Download an image from URL and return as Buffer
  */
 export async function downloadImage(
   imageUrl: string,
-  localPath: string,
   options: ImageDownloadOptions = {}
 ): Promise<ImageDownloadResult> {
   const {
@@ -41,13 +40,7 @@ export async function downloadImage(
 
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
-      logger.debug(`Downloading image (attempt ${attempt}/${maxRetries}): ${imageUrl}`);
-
-      // Ensure directory exists
-      const dir = dirname(localPath);
-      if (!existsSync(dir)) {
-        mkdirSync(dir, { recursive: true });
-      }
+      logger.debug(`Downloading image to memory (attempt ${attempt}/${maxRetries}): ${imageUrl}`);
 
       // Fetch image with timeout
       const controller = new AbortController();
@@ -72,44 +65,32 @@ export async function downloadImage(
         throw new Error(`Invalid content type: ${contentType}`);
       }
 
-      // Download to file
+      // Download to memory
       if (!response.body) {
         throw new Error("Response body is null");
       }
 
-      const fileStream = createWriteStream(localPath);
-      await pipeline(response.body as any, fileStream);
-
-      // Get file size
-      const stats = statSync(localPath);
-      const fileSize = stats.size;
+      // Read response as array buffer
+      const arrayBuffer = await response.arrayBuffer();
+      const imageData = Buffer.from(arrayBuffer);
+      const fileSize = imageData.length;
 
       // Validate file size
       if (fileSize === 0) {
-        unlinkSync(localPath);
-        throw new Error("Downloaded file is empty");
+        throw new Error("Downloaded image is empty");
       }
 
-      logger.debug(`Image downloaded successfully: ${localPath} (${fileSize} bytes)`);
+      logger.debug(`Image downloaded successfully: ${fileSize} bytes`);
 
       return {
         success: true,
-        localPath,
+        imageData,
         fileSize,
         contentType,
       };
     } catch (error: any) {
       lastError = error;
       logger.warn(`Image download attempt ${attempt} failed: ${error.message}`);
-
-      // Clean up partial download
-      if (existsSync(localPath)) {
-        try {
-          unlinkSync(localPath);
-        } catch (e) {
-          // Ignore cleanup errors
-        }
-      }
 
       // Wait before retry (exponential backoff)
       if (attempt < maxRetries) {
@@ -135,7 +116,6 @@ export async function downloadImage(
  */
 export async function downloadImages(
   imageUrls: string[],
-  getLocalPath: (url: string, index: number) => string,
   options: ImageDownloadOptions & { concurrency?: number } = {}
 ): Promise<ImageDownloadResult[]> {
   const { concurrency = 3, ...downloadOptions } = options;
@@ -144,11 +124,7 @@ export async function downloadImages(
   // Process in batches
   for (let i = 0; i < imageUrls.length; i += concurrency) {
     const batch = imageUrls.slice(i, i + concurrency);
-    const batchPromises = batch.map((url, batchIndex) => {
-      const globalIndex = i + batchIndex;
-      const localPath = getLocalPath(url, globalIndex);
-      return downloadImage(url, localPath, downloadOptions);
-    });
+    const batchPromises = batch.map((url) => downloadImage(url, downloadOptions));
 
     const batchResults = await Promise.all(batchPromises);
     results.push(...batchResults);
@@ -182,18 +158,4 @@ export function getImageExtension(url: string, contentType?: string): string {
 
   // Default
   return "jpg";
-}
-
-/**
- * Build local path for image
- */
-export function buildImagePath(
-  baseDir: string,
-  propertyId: string,
-  index: number,
-  url: string,
-  contentType?: string
-): string {
-  const ext = getImageExtension(url, contentType);
-  return `${baseDir}/${propertyId}/${index}.${ext}`;
 }

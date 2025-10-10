@@ -1,23 +1,24 @@
 /**
  * Property Repository
  * CRUD operations for properties table
+ * Updated for DuckDB async operations
  */
 
-import type { DatabaseConnection } from "../connection.js";
+import type { DuckDBConnection } from "../connectionDuckDB.js";
 import type { Property, PropertyInput, PropertyUpdate } from "../../models/Property.js";
 
 export class PropertyRepository {
-  constructor(private db: DatabaseConnection) {}
+  constructor(private db: DuckDBConnection) {}
 
   /**
    * Insert a new property
    */
-  public insert(property: PropertyInput): void {
+  public async insert(property: PropertyInput): Promise<void> {
     // Filter out undefined values and convert booleans to numbers
     const cleanedProperty: any = {};
     for (const [key, value] of Object.entries(property)) {
       if (value !== undefined) {
-        // Convert boolean to number for SQLite
+        // Convert boolean to number for DuckDB
         if (typeof value === "boolean") {
           cleanedProperty[key] = value ? 1 : 0;
         } else {
@@ -35,14 +36,14 @@ export class PropertyRepository {
       VALUES (${placeholders})
     `;
 
-    this.db.execute(sql, values);
+    await this.db.execute(sql, values);
   }
 
   /**
    * Upsert (insert or update) a property
    */
-  public upsert(property: PropertyInput): void {
-    const existing = this.findById(property.id);
+  public async upsert(property: PropertyInput): Promise<void> {
+    const existing = await this.findById(property.id);
 
     if (existing) {
       // Update existing property
@@ -51,10 +52,10 @@ export class PropertyRepository {
         last_crawled_at: new Date().toISOString(),
         crawl_count: existing.crawl_count + 1,
       };
-      this.update(updateData);
+      await this.update(updateData);
     } else {
       // Insert new property
-      this.insert({
+      await this.insert({
         ...property,
         first_crawled_at: new Date().toISOString(),
         last_crawled_at: new Date().toISOString(),
@@ -66,14 +67,14 @@ export class PropertyRepository {
   /**
    * Update an existing property
    */
-  public update(property: PropertyUpdate): void {
+  public async update(property: PropertyUpdate): Promise<void> {
     const { id, ...fields } = property;
 
     // Filter out undefined values and convert booleans to numbers
     const cleanedFields: any = {};
     for (const [key, value] of Object.entries(fields)) {
       if (value !== undefined) {
-        // Convert boolean to number for SQLite
+        // Convert boolean to number for DuckDB
         if (typeof value === "boolean") {
           cleanedFields[key] = value ? 1 : 0;
         } else {
@@ -93,14 +94,14 @@ export class PropertyRepository {
       WHERE id = ?
     `;
 
-    this.db.execute(sql, values);
+    await this.db.execute(sql, values);
   }
 
   /**
    * Find property by ID
    */
-  public findById(id: string): Property | undefined {
-    return this.db.queryOne<Property>(
+  public async findById(id: string): Promise<Property | undefined> {
+    return await this.db.queryOne<Property>(
       "SELECT * FROM properties WHERE id = ?",
       [id]
     );
@@ -109,7 +110,7 @@ export class PropertyRepository {
   /**
    * Find all properties
    */
-  public findAll(limit?: number, offset?: number): Property[] {
+  public async findAll(limit?: number, offset?: number): Promise<Property[]> {
     let sql = "SELECT * FROM properties ORDER BY first_crawled_at DESC";
     const params: any[] = [];
 
@@ -123,13 +124,13 @@ export class PropertyRepository {
       params.push(offset);
     }
 
-    return this.db.query<Property>(sql, params);
+    return await this.db.query<Property>(sql, params);
   }
 
   /**
    * Find properties by city
    */
-  public findByCity(city: string, limit?: number): Property[] {
+  public async findByCity(city: string, limit?: number): Promise<Property[]> {
     let sql = "SELECT * FROM properties WHERE city = ? ORDER BY first_crawled_at DESC";
     const params: any[] = [city];
 
@@ -138,14 +139,14 @@ export class PropertyRepository {
       params.push(limit);
     }
 
-    return this.db.query<Property>(sql, params);
+    return await this.db.query<Property>(sql, params);
   }
 
   /**
    * Find properties by URL
    */
-  public findByUrl(url: string): Property | undefined {
-    return this.db.queryOne<Property>(
+  public async findByUrl(url: string): Promise<Property | undefined> {
+    return await this.db.queryOne<Property>(
       "SELECT * FROM properties WHERE url = ?",
       [url]
     );
@@ -154,8 +155,8 @@ export class PropertyRepository {
   /**
    * Count total properties
    */
-  public count(): number {
-    const result = this.db.queryOne<{ count: number }>(
+  public async count(): Promise<number> {
+    const result = await this.db.queryOne<{ count: number }>(
       "SELECT COUNT(*) as count FROM properties"
     );
     return result?.count || 0;
@@ -164,8 +165,8 @@ export class PropertyRepository {
   /**
    * Count properties by city
    */
-  public countByCity(city: string): number {
-    const result = this.db.queryOne<{ count: number }>(
+  public async countByCity(city: string): Promise<number> {
+    const result = await this.db.queryOne<{ count: number }>(
       "SELECT COUNT(*) as count FROM properties WHERE city = ?",
       [city]
     );
@@ -175,15 +176,15 @@ export class PropertyRepository {
   /**
    * Delete property by ID
    */
-  public delete(id: string): void {
-    this.db.execute("DELETE FROM properties WHERE id = ?", [id]);
+  public async delete(id: string): Promise<void> {
+    await this.db.execute("DELETE FROM properties WHERE id = ?", [id]);
   }
 
   /**
    * Find properties with missing data
    */
-  public findIncomplete(): Property[] {
-    return this.db.query<Property>(
+  public async findIncomplete(): Promise<Property[]> {
+    return await this.db.query<Property>(
       "SELECT * FROM properties WHERE data_complete = 0 OR has_errors = 1"
     );
   }
@@ -191,8 +192,8 @@ export class PropertyRepository {
   /**
    * Find properties needing re-crawl (older than N days)
    */
-  public findStale(days: number = 30): Property[] {
-    return this.db.query<Property>(
+  public async findStale(days: number = 30): Promise<Property[]> {
+    return await this.db.query<Property>(
       `SELECT * FROM properties
        WHERE datetime(last_crawled_at) < datetime('now', '-${days} days')`
     );

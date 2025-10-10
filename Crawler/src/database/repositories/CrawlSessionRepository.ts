@@ -1,9 +1,10 @@
 /**
  * Crawl Session Repository
  * CRUD operations for crawl_sessions and crawl_errors tables
+ * Updated for DuckDB async operations
  */
 
-import type { DatabaseConnection } from "../connection.js";
+import type { DuckDBConnection } from "../connectionDuckDB.js";
 import type {
   CrawlSession,
   CrawlError,
@@ -11,36 +12,43 @@ import type {
 } from "../../models/Property.js";
 
 export class CrawlSessionRepository {
-  constructor(private db: DatabaseConnection) {}
+  constructor(private db: DuckDBConnection) {}
 
   /**
    * Start a new crawl session
    */
-  public startSession(
+  public async startSession(
     sessionId: string,
     targetCity?: string,
     maxProperties?: number
-  ): number {
+  ): Promise<number> {
+    // Generate next ID manually for DuckDB
+    const nextIdResult = await this.db.queryOne<{ nextId: number }>(
+      "SELECT COALESCE(MAX(id), 0) + 1 as nextId FROM crawl_sessions"
+    );
+    const nextId = nextIdResult?.nextId || 1;
+
     const sql = `
       INSERT INTO crawl_sessions (
-        session_id, target_city, max_properties, status
+        id, session_id, target_city, max_properties, status
       )
-      VALUES (?, ?, ?, 'running')
+      VALUES (?, ?, ?, ?, 'running')
     `;
 
-    const result = this.db.execute(sql, [
+    await this.db.execute(sql, [
+      nextId,
       sessionId,
       targetCity || null,
       maxProperties || null,
     ]);
 
-    return result.lastInsertRowid as number;
+    return nextId;
   }
 
   /**
    * Update session statistics
    */
-  public updateStats(
+  public async updateStats(
     sessionId: string,
     stats: {
       properties_found?: number;
@@ -50,7 +58,7 @@ export class CrawlSessionRepository {
       images_downloaded?: number;
       images_failed?: number;
     }
-  ): void {
+  ): Promise<void> {
     const fields = Object.keys(stats);
     const setClause = fields.map((field) => `${field} = ?`).join(", ");
     const values = [...Object.values(stats), sessionId];
@@ -61,13 +69,13 @@ export class CrawlSessionRepository {
       WHERE session_id = ?
     `;
 
-    this.db.execute(sql, values);
+    await this.db.execute(sql, values);
   }
 
   /**
    * Complete a crawl session
    */
-  public completeSession(sessionId: string, success: boolean, errorMessage?: string): void {
+  public async completeSession(sessionId: string, success: boolean, errorMessage?: string): Promise<void> {
     const sql = `
       UPDATE crawl_sessions
       SET status = ?,
@@ -76,7 +84,7 @@ export class CrawlSessionRepository {
       WHERE session_id = ?
     `;
 
-    this.db.execute(sql, [
+    await this.db.execute(sql, [
       success ? "completed" : "failed",
       errorMessage || null,
       sessionId,
@@ -86,7 +94,7 @@ export class CrawlSessionRepository {
   /**
    * Mark session as interrupted
    */
-  public interruptSession(sessionId: string): void {
+  public async interruptSession(sessionId: string): Promise<void> {
     const sql = `
       UPDATE crawl_sessions
       SET status = 'interrupted',
@@ -94,14 +102,14 @@ export class CrawlSessionRepository {
       WHERE session_id = ?
     `;
 
-    this.db.execute(sql, [sessionId]);
+    await this.db.execute(sql, [sessionId]);
   }
 
   /**
    * Find session by ID
    */
-  public findBySessionId(sessionId: string): CrawlSession | undefined {
-    return this.db.queryOne<CrawlSession>(
+  public async findBySessionId(sessionId: string): Promise<CrawlSession | undefined> {
+    return await this.db.queryOne<CrawlSession>(
       "SELECT * FROM crawl_sessions WHERE session_id = ?",
       [sessionId]
     );
@@ -110,8 +118,8 @@ export class CrawlSessionRepository {
   /**
    * Get recent sessions
    */
-  public getRecentSessions(limit: number = 10): SessionSummary[] {
-    return this.db.query<SessionSummary>(
+  public async getRecentSessions(limit: number = 10): Promise<SessionSummary[]> {
+    return await this.db.query<SessionSummary>(
       "SELECT * FROM v_session_summary LIMIT ?",
       [limit]
     );
@@ -120,29 +128,36 @@ export class CrawlSessionRepository {
   /**
    * Get session statistics
    */
-  public getSessionStats(sessionId: string): CrawlSession | undefined {
-    return this.findBySessionId(sessionId);
+  public async getSessionStats(sessionId: string): Promise<CrawlSession | undefined> {
+    return await this.findBySessionId(sessionId);
   }
 
   /**
    * Log a crawl error
    */
-  public logError(
+  public async logError(
     sessionId: string,
     errorType: string,
     errorMessage: string,
     errorStack?: string,
     url?: string,
     propertyId?: string
-  ): number {
+  ): Promise<number> {
+    // Generate next ID manually for DuckDB
+    const nextIdResult = await this.db.queryOne<{ nextId: number }>(
+      "SELECT COALESCE(MAX(id), 0) + 1 as nextId FROM crawl_errors"
+    );
+    const nextId = nextIdResult?.nextId || 1;
+
     const sql = `
       INSERT INTO crawl_errors (
-        session_id, error_type, error_message, error_stack, url, property_id
+        id, session_id, error_type, error_message, error_stack, url, property_id
       )
-      VALUES (?, ?, ?, ?, ?, ?)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
     `;
 
-    const result = this.db.execute(sql, [
+    await this.db.execute(sql, [
+      nextId,
       sessionId,
       errorType,
       errorMessage,
@@ -151,14 +166,14 @@ export class CrawlSessionRepository {
       propertyId || null,
     ]);
 
-    return result.lastInsertRowid as number;
+    return nextId;
   }
 
   /**
    * Get errors for a session
    */
-  public getSessionErrors(sessionId: string): CrawlError[] {
-    return this.db.query<CrawlError>(
+  public async getSessionErrors(sessionId: string): Promise<CrawlError[]> {
+    return await this.db.query<CrawlError>(
       `SELECT * FROM crawl_errors
        WHERE session_id = ?
        ORDER BY occurred_at DESC`,
@@ -169,8 +184,8 @@ export class CrawlSessionRepository {
   /**
    * Get error statistics
    */
-  public getErrorStats(sessionId: string): Record<string, number> {
-    const errors = this.db.query<{ error_type: string; count: number }>(
+  public async getErrorStats(sessionId: string): Promise<Record<string, number>> {
+    const errors = await this.db.query<{ error_type: string; count: number }>(
       `SELECT error_type, COUNT(*) as count
        FROM crawl_errors
        WHERE session_id = ?
@@ -190,8 +205,8 @@ export class CrawlSessionRepository {
   /**
    * Delete old sessions (older than N days)
    */
-  public deleteOldSessions(days: number = 90): void {
-    this.db.execute(
+  public async deleteOldSessions(days: number = 90): Promise<void> {
+    await this.db.execute(
       `DELETE FROM crawl_sessions
        WHERE datetime(start_time) < datetime('now', '-${days} days')`
     );
@@ -200,14 +215,14 @@ export class CrawlSessionRepository {
   /**
    * Get overall statistics
    */
-  public getOverallStats(): {
+  public async getOverallStats(): Promise<{
     total_sessions: number;
     completed_sessions: number;
     failed_sessions: number;
     total_properties: number;
     total_errors: number;
-  } {
-    const sessionStats = this.db.queryOne<{
+  }> {
+    const sessionStats = await this.db.queryOne<{
       total: number;
       completed: number;
       failed: number;
@@ -219,11 +234,11 @@ export class CrawlSessionRepository {
       FROM crawl_sessions
     `);
 
-    const propertiesCount = this.db.queryOne<{ total: number }>(
+    const propertiesCount = await this.db.queryOne<{ total: number }>(
       "SELECT SUM(properties_found) as total FROM crawl_sessions"
     );
 
-    const errorsCount = this.db.queryOne<{ total: number }>(
+    const errorsCount = await this.db.queryOne<{ total: number }>(
       "SELECT COUNT(*) as total FROM crawl_errors"
     );
 

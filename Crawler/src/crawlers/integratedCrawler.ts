@@ -3,7 +3,7 @@
  * Combines search crawler and property crawler for end-to-end crawling
  */
 
-import { initDatabase } from "../database/connection.js";
+import { initDatabase } from "../database/connectionManager.js";
 import { crawlSearchResults } from "./searchCrawler.js";
 import { crawlProperties } from "./propertyCrawler.js";
 import { crawlPropertiesWithFreshBrowser } from "./singleBrowserCrawler.js";
@@ -76,7 +76,7 @@ export async function runFullCrawl(
     const sessionRepo = new CrawlSessionRepository(db);
 
     // Start session
-    sessionRepo.startSession(sessionId, city, maxProperties);
+    await sessionRepo.startSession(sessionId, city, maxProperties);
 
     // Phase 1: Crawl search results
     logger.info("\n📋 Phase 1: Crawling search results...");
@@ -153,7 +153,7 @@ export async function runFullCrawl(
     progressReporter.stop();
 
     // Complete session
-    sessionRepo.completeSession(sessionId, true);
+    await sessionRepo.completeSession(sessionId, true);
 
     const duration = Date.now() - startTime;
 
@@ -225,7 +225,7 @@ export async function runPropertyCrawl(
     const sessionRepo = new CrawlSessionRepository(db);
 
     // Start session
-    sessionRepo.startSession(sessionId);
+    await sessionRepo.startSession(sessionId);
 
     // Crawl properties
     const stats = await crawlProperties(db, propertyUrls, sessionId, {
@@ -235,7 +235,7 @@ export async function runPropertyCrawl(
     });
 
     // Complete session
-    sessionRepo.completeSession(sessionId, true);
+    await sessionRepo.completeSession(sessionId, true);
 
     const duration = Date.now() - startTime;
 

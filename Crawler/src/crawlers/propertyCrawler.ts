@@ -16,7 +16,7 @@ import { simulateHumanBehavior } from "../utils/humanBehavior.js";
 import { randomDelay } from "../utils/sleep.js";
 import { logger } from "../utils/logger.js";
 import { config } from "../utils/config.js";
-import type { DatabaseConnection } from "../database/connection.js";
+import type { DuckDBConnection } from "../database/connectionDuckDB.js";
 import {
   screenshotIfJavaScriptDisabled,
   screenshotIfCaptcha,
@@ -47,7 +47,7 @@ export interface PropertyCrawlerOptions {
  * Create property crawler
  */
 export function createPropertyCrawler(
-  db: DatabaseConnection,
+  db: DuckDBConnection,
   sessionId: string,
   options: PropertyCrawlerOptions = {}
 ): PlaywrightCrawler {
@@ -207,7 +207,7 @@ export function createPropertyCrawler(
               // Continue with extraction (don't return)
             } else {
               logger.error("❌ CAPTCHA solving failed");
-              sessionRepo.logError(
+              await sessionRepo.logError(
                 sessionId,
                 "captcha",
                 "CAPTCHA detected but solving failed",
@@ -222,7 +222,7 @@ export function createPropertyCrawler(
             }
           } else if (captchaDetected && !captchaSolver) {
             logger.warn("⚠️  CAPTCHA detected but no solver configured (set CAPTCHA_API_KEY)");
-            sessionRepo.logError(
+            await sessionRepo.logError(
               sessionId,
               "captcha",
               "CAPTCHA challenge detected - no solver configured",
@@ -237,7 +237,7 @@ export function createPropertyCrawler(
           } else {
             // Non-CAPTCHA blocking (rate limit, etc.)
             logger.warn("⚠️  Blocking detected but no CAPTCHA - likely rate limited");
-            sessionRepo.logError(
+            await sessionRepo.logError(
               sessionId,
               "rate_limit",
               "Rate limiting or access restriction detected",
@@ -259,7 +259,7 @@ export function createPropertyCrawler(
 
         if (!propertyData) {
           logger.error(`❌ Failed to extract data from ${url}`);
-          sessionRepo.logError(
+          await sessionRepo.logError(
             sessionId,
             "extraction",
             "Failed to extract property data",
@@ -273,10 +273,10 @@ export function createPropertyCrawler(
         logger.info(`✅ Extracted property: ${propertyData.id} - ${propertyData.address || 'Unknown'}, ₪${propertyData.price || 'N/A'}`);
 
         // Check if property exists
-        const existing = propertyRepo.findById(propertyData.id);
+        const existing = await propertyRepo.findById(propertyData.id);
 
         // Upsert property
-        propertyRepo.upsert(propertyData);
+        await propertyRepo.upsert(propertyData);
 
         if (existing) {
           stats.propertiesUpdated++;
@@ -294,7 +294,7 @@ export function createPropertyCrawler(
           logger.info(`Found ${imageUrls.length} images for property ${propertyData.id}`);
 
           // Delete old image records
-          imageRepo.deleteByPropertyId(propertyData.id);
+          await imageRepo.deleteByPropertyId(propertyData.id);
 
           // Download images if enabled
           if (downloadImages) {
@@ -327,13 +327,13 @@ export function createPropertyCrawler(
               is_main_image: index === 0,
             }));
 
-            imageRepo.insertMany(images);
+            await imageRepo.insertMany(images);
             logger.info(`Saved ${imageUrls.length} image URLs (download disabled)`);
           }
         }
 
         // Update session stats
-        sessionRepo.updateStats(sessionId, {
+        await sessionRepo.updateStats(sessionId, {
           properties_found: stats.propertiesFound,
           properties_new: stats.propertiesNew,
           properties_updated: stats.propertiesUpdated,
@@ -356,7 +356,7 @@ export function createPropertyCrawler(
         }
 
         logger.error(`Error processing ${url}:`, error);
-        sessionRepo.logError(
+        await sessionRepo.logError(
           sessionId,
           "extraction",
           error.message,
@@ -368,9 +368,9 @@ export function createPropertyCrawler(
     },
 
     // Failed request handler
-    failedRequestHandler({ request, log }, error) {
+    async failedRequestHandler({ request, log }, error) {
       log.error(`Request ${request.url} failed`, error);
-      sessionRepo.logError(
+      await sessionRepo.logError(
         sessionId,
         "network",
         error.message,
@@ -388,7 +388,7 @@ export function createPropertyCrawler(
  * Run crawler on a list of URLs
  */
 export async function crawlProperties(
-  db: DatabaseConnection,
+  db: DuckDBConnection,
   propertyUrls: string[],
   sessionId?: string,
   options?: PropertyCrawlerOptions
@@ -398,7 +398,7 @@ export async function crawlProperties(
 
   // Start session only if we created it (not passed in)
   if (!sessionId) {
-    sessionRepo.startSession(actualSessionId, config.target.city);
+    await sessionRepo.startSession(actualSessionId, config.target.city);
     logger.info(`Started crawl session: ${actualSessionId}`);
   } else {
     logger.info(`Using existing session: ${actualSessionId}`);
@@ -417,12 +417,12 @@ export async function crawlProperties(
 
     // Complete session only if we created it (not passed in)
     if (!sessionId) {
-      sessionRepo.completeSession(actualSessionId, true);
+      await sessionRepo.completeSession(actualSessionId, true);
       logger.info(`Completed crawl session: ${actualSessionId}`);
     }
 
     // Get final stats
-    const finalStats = sessionRepo.getSessionStats(actualSessionId);
+    const finalStats = await sessionRepo.getSessionStats(actualSessionId);
     return {
       propertiesFound: finalStats?.properties_found || 0,
       propertiesNew: finalStats?.properties_new || 0,
@@ -436,7 +436,7 @@ export async function crawlProperties(
     logger.error("Crawler error:", error);
     // Complete session with error only if we created it (not passed in)
     if (!sessionId) {
-      sessionRepo.completeSession(actualSessionId, false, error.message);
+      await sessionRepo.completeSession(actualSessionId, false, error.message);
     }
     throw error;
   }

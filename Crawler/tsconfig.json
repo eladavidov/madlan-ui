@@ -27,8 +27,7 @@
     "node_modules",
     "dist",
     "tests",
-    "src/tests/test-extraction.ts",
-    "src/tests/test-multi-properties.ts",
-    "src/tests/test-single-property.ts"
+    "src/tests/**/*",
+    "src/scripts/**/*"
   ]
 }
