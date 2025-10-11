@@ -1,11 +1,10 @@
 /**
  * Transaction History Extractor
- * Extracts historical transaction data from "חשוב לדעת" (Important to Know) section
+ * Extracts historical transaction data from "היסטוריית עסקאות" (Transaction History) section
  */
 
 import type { Page } from "playwright";
 import type { TransactionHistoryInput } from "../models/Property.js";
-import { expandPanelByText, waitForPanelContent } from "../utils/panelExpander.js";
 
 /**
  * Extract transaction history from property page
@@ -16,158 +15,159 @@ export async function extractTransactionHistory(
   propertyId: string
 ): Promise<TransactionHistoryInput[]> {
   try {
-    // Try to expand the panel if it's collapsed
-    const panelExpanded = await expandPanelByText(page, "חשוב לדעת");
+    // Extract transaction data - section is already expanded by default
+    console.log('[transactionExtractor] Extracting transaction history...');
 
-    if (panelExpanded) {
-      // Wait for table content to load
-      await waitForPanelContent(page, 'table, [class*="table"]', 3000);
-    }
-
-    // Extract transaction data from table
     const transactions = await page.evaluate((propId) => {
       const results: any[] = [];
 
-      // Strategy 1: Look for table with transaction data
-      const tables = document.querySelectorAll('table');
+      // Find all transaction address links - they're inside the transaction history section
+      // Pattern: Links that contain street names/addresses in Hebrew
+      const allLinks = Array.from(document.querySelectorAll('a'));
 
-      for (const table of tables) {
-        // Check if this table contains transaction data
-        const headerText = table.textContent || '';
-        if (headerText.includes('כתובת') || headerText.includes('תאריך') || headerText.includes('מחיר')) {
-          const rows = Array.from(table.querySelectorAll('tbody tr, tr'));
+      // Find the transaction history heading first to ensure we're in the right section
+      const headings = Array.from(document.querySelectorAll('h3'));
+      const transactionHeading = headings.find(h => h.textContent?.includes('היסטוריית עסקאות'));
 
-          for (const row of rows) {
-            const cells = Array.from(row.querySelectorAll('td, th'));
+      if (!transactionHeading) {
+        console.log('[transactionExtractor] Transaction history heading not found');
+        return results;
+      }
 
-            if (cells.length < 3) continue; // Skip header or invalid rows
+      // Get the parent container of the transaction section
+      let transactionSection = transactionHeading.parentElement;
+      while (transactionSection && transactionSection.tagName !== 'BODY') {
+        // Look for the section that contains both the heading and transaction rows
+        const sectionText = transactionSection.textContent || '';
+        if (sectionText.includes('ת. עסקה') && sectionText.includes('מחיר ב₪')) {
+          break;
+        }
+        transactionSection = transactionSection.parentElement;
+      }
 
-            // Try to extract data from cells
-            // Common patterns: Address, Date, Price, Size, Floor, Rooms, Year Built
-            const rowData: any = {
-              property_id: propId
-            };
+      if (!transactionSection) {
+        console.log('[transactionExtractor] Transaction section container not found');
+        return results;
+      }
 
-            // Parse each cell - order may vary
-            let cellIndex = 0;
-            for (const cell of cells) {
-              const text = cell.textContent?.trim() || '';
+      // Now find all links within this section that look like addresses
+      const sectionLinks = Array.from(transactionSection.querySelectorAll('a'));
 
-              // Skip empty cells or header cells
-              if (!text || text.includes('כתובת') || text.includes('תאריך') || text.includes('מחיר')) {
-                cellIndex++;
-                continue;
-              }
+      for (const link of sectionLinks) {
+        const linkText = link.textContent?.trim() || '';
 
-              // Detect what type of data this cell contains
-              // Address: contains street name (Hebrew text, might have numbers)
-              if (cellIndex === 0 || text.match(/^[א-ת\s\d]+$/)) {
-                if (!rowData.transaction_address && text.length > 3) {
-                  rowData.transaction_address = text;
-                }
-              }
+        // Skip empty links or very short ones
+        if (linkText.length < 2) continue;
 
-              // Date: DD/MM/YYYY or DD.MM.YYYY
-              if (text.match(/\d{1,2}[\/\.]\d{1,2}[\/\.]\d{2,4}/)) {
-                const dateParts = text.split(/[\/\.]/);
-                if (dateParts.length === 3) {
-                  const day = dateParts[0].padStart(2, '0');
-                  const month = dateParts[1].padStart(2, '0');
-                  let year = dateParts[2];
-                  // Convert 2-digit year to 4-digit
-                  if (year.length === 2) {
-                    year = (parseInt(year) > 50 ? '19' : '20') + year;
-                  }
-                  rowData.transaction_date = `${year}-${month}-${day}`;
-                }
-              }
+        // Skip if it's a pagination or filter link
+        if (linkText.match(/^\d+$/) || linkText.includes('סינון') || linkText.includes('בסביבה')) {
+          continue;
+        }
 
-              // Price: Large number (₪1,500,000 or 1500000)
-              const priceMatch = text.match(/[\d,]+/);
-              if (priceMatch && !rowData.transaction_price) {
-                const num = parseInt(priceMatch[0].replace(/,/g, ''));
-                if (num > 100000 && num < 100000000) { // Reasonable price range
-                  rowData.transaction_price = num;
-                }
-              }
+        // Skip "related listings" section
+        if (linkText.includes('מודעות') || linkText.includes('פרויקט')) {
+          continue;
+        }
 
-              // Size: Number followed by מ"ר or m²
-              if (text.includes('מ"ר') || text.includes('m²')) {
-                const sizeMatch = text.match(/(\d+\.?\d*)/);
-                if (sizeMatch) {
-                  rowData.transaction_size = parseFloat(sizeMatch[1]);
-                }
-              }
+        // Check if parent contains transaction data markers
+        let row = link.parentElement;
+        let rowText = '';
 
-              // Floor: קומה or just a small number (0-100)
-              if ((text.includes('קומה') || (!isNaN(Number(text)) && Number(text) >= -2 && Number(text) <= 100)) && !rowData.transaction_floor) {
-                const floorMatch = text.match(/-?\d+/);
-                if (floorMatch) {
-                  const floor = parseInt(floorMatch[0]);
-                  if (floor >= -2 && floor <= 100) {
-                    rowData.transaction_floor = floor;
-                  }
-                }
-              }
-
-              // Rooms: Small decimal number (0.5-20)
-              if (!rowData.transaction_rooms) {
-                const roomMatch = text.match(/^(\d+\.?\d*)$/);
-                if (roomMatch) {
-                  const rooms = parseFloat(roomMatch[1]);
-                  if (rooms >= 0.5 && rooms <= 20) {
-                    rowData.transaction_rooms = rooms;
-                  }
-                }
-              }
-
-              // Year built: 4-digit year (1900-2030)
-              const yearMatch = text.match(/\b(19\d{2}|20[0-3]\d)\b/);
-              if (yearMatch && !rowData.year_built) {
-                rowData.year_built = parseInt(yearMatch[1]);
-              }
-
-              cellIndex++;
-            }
-
-            // Calculate price per sqm if we have both price and size
-            if (rowData.transaction_price && rowData.transaction_size) {
-              rowData.transaction_price_per_sqm = Math.round(rowData.transaction_price / rowData.transaction_size);
-            }
-
-            // Only add if we have minimum data (at least address or date and price)
-            if ((rowData.transaction_address || rowData.transaction_date) && rowData.transaction_price) {
-              results.push(rowData);
-            }
-          }
-
-          // If we found data in this table, stop looking
-          if (results.length > 0) {
+        // Walk up to find the row container
+        for (let i = 0; i < 5 && row; i++) {
+          rowText = row.textContent || '';
+          // Transaction rows have: address, bullet (•), size (מ״ר), bullet, price/sqm, bullet, rooms (חד'), bullet, floor (קומה), bullet, year (ב-)
+          if (rowText.includes('מ״ר') && rowText.includes('₪') && rowText.includes('•')) {
             break;
           }
+          row = row.parentElement;
         }
-      }
 
-      // Strategy 2: Look for structured divs with transaction data (if no table found)
-      if (results.length === 0) {
-        // Look for transaction cards or list items
-        const transactionElements = document.querySelectorAll('[class*="transaction"], [class*="history"]');
+        if (!row || !rowText) continue;
 
-        for (const element of transactionElements) {
-          // Similar parsing logic as above but for div-based layouts
-          // This would need to be customized based on actual Madlan HTML structure
-          // For now, we'll rely on table extraction
+        // Parse the row data
+        const rowData: any = {
+          property_id: propId,
+          transaction_address: linkText
+        };
 
-          // Check if element has meaningful content before processing
-          if (element.textContent && element.textContent.length > 10) {
-            // TODO: Add div-based extraction logic if needed
+        // Split by bullet points to get segments
+        const segments = rowText.split('•').map(s => s.trim());
+
+        for (const segment of segments) {
+          // Date: D.M.YYYY or DD.MM.YYYY format
+          const dateMatch = segment.match(/(\d{1,2})\.(\d{1,2})\.(\d{4})/);
+          if (dateMatch) {
+            const [, day, month, year] = dateMatch;
+            rowData.transaction_date = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+          }
+
+          // Size: "120 מ״ר" or just number before מ״ר
+          const sizeMatch = segment.match(/(\d+)\s*מ״ר/);
+          if (sizeMatch) {
+            rowData.transaction_size = parseInt(sizeMatch[1]);
+          }
+
+          // Price per sqm: "14,166 ₪ למ״ר" or "‏14,166 ‏₪"
+          const pricePerSqmMatch = segment.match(/([\d,]+)\s*₪\s*למ״ר/);
+          if (pricePerSqmMatch) {
+            rowData.transaction_price_per_sqm = parseInt(pricePerSqmMatch[1].replace(/,/g, ''));
+          }
+
+          // Rooms: "3 חד'"
+          const roomsMatch = segment.match(/(\d+)\s*חד['׳]/);
+          if (roomsMatch) {
+            rowData.transaction_rooms = parseInt(roomsMatch[1]);
+          }
+
+          // Floor: "קומה 2" or "קרקע"
+          if (segment.includes('קרקע')) {
+            rowData.transaction_floor = 0;
+          } else {
+            const floorMatch = segment.match(/קומה\s+(\d+)/);
+            if (floorMatch) {
+              rowData.transaction_floor = parseInt(floorMatch[1]);
+            }
+          }
+
+          // Year built: "נבנה ב-1920"
+          const yearMatch = segment.match(/נבנה ב-(\d{4})/);
+          if (yearMatch) {
+            rowData.year_built = parseInt(yearMatch[1]);
+          }
+
+          // Price: "1.7 מ' ₪" or "600 א' ₪"
+          const priceMillionsMatch = segment.match(/([\d.]+)\s*מ['׳]\s*₪/);
+          const priceThousandsMatch = segment.match(/([\d.]+)\s*א['׳]\s*₪/);
+
+          if (priceMillionsMatch) {
+            rowData.transaction_price = Math.round(parseFloat(priceMillionsMatch[1]) * 1000000);
+          } else if (priceThousandsMatch) {
+            rowData.transaction_price = Math.round(parseFloat(priceThousandsMatch[1]) * 1000);
           }
         }
+
+        // Calculate price per sqm if we have price and size but no price_per_sqm
+        if (rowData.transaction_price && rowData.transaction_size && !rowData.transaction_price_per_sqm) {
+          rowData.transaction_price_per_sqm = Math.round(rowData.transaction_price / rowData.transaction_size);
+        }
+
+        // Only add if we have minimum required data (address + date OR price)
+        if (rowData.transaction_address && (rowData.transaction_date || rowData.transaction_price)) {
+          console.log(`[transactionExtractor] Adding transaction: ${rowData.transaction_address}`);
+          results.push(rowData);
+        }
       }
 
-      return results;
+      console.log(`[transactionExtractor] Found ${results.length} transactions in section`);
+      return results.slice(0, 20); // Limit to first 20
     }, propertyId);
 
+    console.log(`[transactionExtractor] Evaluated, found ${transactions.length} transactions`);
+    console.log(`[transactionExtractor] Final result: ${transactions.length} transactions`);
+    if (transactions.length > 0) {
+      console.log(`[transactionExtractor] Sample:`, JSON.stringify(transactions[0]));
+    }
     return transactions as TransactionHistoryInput[];
   } catch (error) {
     console.error('Error extracting transaction history:', error);

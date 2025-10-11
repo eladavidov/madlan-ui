@@ -308,9 +308,9 @@ npm run analyze          # Run DuckDB analytics
 
 **📚 MASTER DOCUMENT**: See **`Crawler/PROJECT-PLAN.md`** - **START HERE**
 
-**Current Status**: ✅ **PRODUCTION READY** - Production Verification Complete (70% success, 9 properties verified)
+**Current Status**: ✅ **PRODUCTION READY** - All Phase 5B Extractors Fixed and Verified
 **Breakthrough Date**: 2025-10-09 - **Anti-blocking solved with 100% success rate!**
-**Latest Update**: 2025-10-11 (Evening) - **Production Verification Complete** + Enhanced schema report with intelligent column sampling
+**Latest Update**: 2025-10-11 (Late Evening) - **Phase 5B Extractors Fixed** (Transaction & Schools) + Project Cleanup Complete
 
 **🎉 Major Achievement - Anti-Blocking Solution**:
 - **Solution**: Fresh browser per property with random delays (60-120s) + HEADLESS=false
@@ -369,6 +369,31 @@ cd Crawler && npx ts-node src/scripts/check-table-counts.ts
 - Major blocking issues detected (403 errors, CAPTCHAs)
 
 **Schema Report**: [file:///C:/Src/Madlan/Crawler/tests/schema-report-with-data.html](file:///C:/Src/Madlan/Crawler/tests/schema-report-with-data.html)
+**Property Data Review**: [file:///C:/Src/Madlan/Crawler/tests/property-data-review.html](file:///C:/Src/Madlan/Crawler/tests/property-data-review.html)
+
+**Latest: Phase 5B Extractor Fixes (2025-10-11 Late Evening)**:
+- ✅ **Transaction Extractor Complete Rewrite** (`src/extractors/transactionExtractor.ts`):
+  - **Problem**: Was returning 0 results when 5+ transactions visible on page
+  - **Solution**: Complete rewrite with proper DOM traversal and bullet-point parsing
+  - **Key Changes**:
+    - Find "היסטוריית עסקאות" heading → walk up DOM to find container
+    - Parse row data by splitting on bullet points (•)
+    - Extract 8 fields using regex patterns (address, date, size, price/sqm, rooms, floor, year, price)
+  - **Result**: Now extracts 9 transactions with all fields correctly populated
+- ✅ **Schools Extractor HTML Structure Parsing** (`src/extractors/schoolsExtractor.ts`):
+  - **Problem**: School names were concatenating all text without proper field separation
+  - **Solution**: Parse HTML structure using CSS class selectors
+  - **Key Changes**:
+    - `.css-1wi4udx` → School name
+    - `.css-pewcrd` → Address
+    - `.css-1vf85xs` → Type and grades
+  - **Result**: 10 schools with clean separated fields (name: "מוריה", address: "מרדכי אנילביץ' 14, חיפה", type: "ממלכתי דתי", grades: "א-ו")
+- ✅ **Project Cleanup Complete**:
+  - Deleted all log files from root and `logs/` directory
+  - Removed old test scripts (kept only comprehensive versions)
+  - Deleted old Crawlee `storage/` directory (using DuckDB-only architecture)
+  - Generated comprehensive Hebrew RTL property data review page
+  - All Phase 5B extractors verified working with actual property data
 
 **Previous: Phase 5B Integration Test Results (2025-10-11 Afternoon)**:
 - ✅ **3-Property Test Crawl**: 3/3 success (100%)

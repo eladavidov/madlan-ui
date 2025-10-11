@@ -156,7 +156,7 @@ CREATE TABLE IF NOT EXISTS property_images (
 
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
-  FOREIGN KEY (property_id) REFERENCES properties(id)
+  -- FOREIGN KEY (property_id) REFERENCES properties(id) -- Disabled: DuckDB doesn't support CASCADE
 );
 
 COMMENT ON TABLE property_images IS 'Stores image URLs and metadata for property photos, including download status and local file paths';
@@ -198,7 +198,7 @@ CREATE TABLE IF NOT EXISTS transaction_history (
 
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
-  FOREIGN KEY (property_id) REFERENCES properties(id)
+  -- FOREIGN KEY (property_id) REFERENCES properties(id) -- Disabled: DuckDB doesn't support CASCADE
 );
 
 COMMENT ON TABLE transaction_history IS 'Historical real estate transactions for the property or nearby properties (from "חשוב לדעת" section) - helps understand pricing trends';
@@ -233,7 +233,7 @@ CREATE TABLE IF NOT EXISTS nearby_schools (
 
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
-  FOREIGN KEY (property_id) REFERENCES properties(id)
+  -- FOREIGN KEY (property_id) REFERENCES properties(id) -- Disabled: DuckDB doesn't support CASCADE
 );
 
 COMMENT ON TABLE nearby_schools IS 'Schools near the property (from "בתי ספר" section) - important for families with children';
@@ -266,7 +266,7 @@ CREATE TABLE IF NOT EXISTS neighborhood_ratings (
 
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
-  FOREIGN KEY (property_id) REFERENCES properties(id)
+  -- FOREIGN KEY (property_id) REFERENCES properties(id) -- Disabled: DuckDB doesn't support CASCADE
 );
 
 COMMENT ON TABLE neighborhood_ratings IS 'Community ratings for the neighborhood (from "דירוגי השכנים" section) - ratings on scale of 1-10 for various quality-of-life metrics';
@@ -300,7 +300,7 @@ CREATE TABLE IF NOT EXISTS price_comparisons (
 
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
-  FOREIGN KEY (property_id) REFERENCES properties(id)
+  -- FOREIGN KEY (property_id) REFERENCES properties(id) -- Disabled: DuckDB doesn't support CASCADE
 );
 
 COMMENT ON TABLE price_comparisons IS 'Price comparison data by room count (from "מחירי דירות" section) - shows average prices and trends for similar properties';
@@ -333,7 +333,7 @@ CREATE TABLE IF NOT EXISTS new_construction_projects (
 
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
-  FOREIGN KEY (property_id) REFERENCES properties(id)
+  -- FOREIGN KEY (property_id) REFERENCES properties(id) -- Disabled: DuckDB doesn't support CASCADE
 );
 
 COMMENT ON TABLE new_construction_projects IS 'New construction projects near the property (from "בניה חדשה" section) - can impact property value and neighborhood development';
@@ -418,7 +418,7 @@ CREATE TABLE IF NOT EXISTS crawl_errors (
 
   occurred_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
-  FOREIGN KEY (session_id) REFERENCES crawl_sessions(session_id)
+  -- FOREIGN KEY (session_id) REFERENCES crawl_sessions(session_id) -- Disabled: DuckDB doesn't support CASCADE
 );
 
 COMMENT ON TABLE crawl_errors IS 'Logs all errors encountered during crawling for debugging and quality monitoring';

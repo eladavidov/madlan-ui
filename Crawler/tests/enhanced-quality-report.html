@@ -204,7 +204,7 @@
     <div class="header">
       <h1>🚀 Madlan Crawler - Enhanced Quality Report</h1>
       <p>Phase 5B Complete: DuckDB Migration & Enhanced Data Extraction</p>
-      <div class="phase-badge">✅ Generated: 10.10.2025, 21:11:40</div>
+      <div class="phase-badge">✅ Generated: 11.10.2025, 20:51:23</div>
     </div>
 
     <div class="section">
@@ -213,7 +213,7 @@
         <h3>DuckDB Database Statistics</h3>
         <div class="highlight-stats">
           <div class="highlight-stat">
-            <div class="highlight-stat-value">0</div>
+            <div class="highlight-stat-value">1</div>
             <div class="highlight-stat-label">Properties in Database</div>
           </div>
           <div class="highlight-stat">
@@ -241,29 +241,29 @@
       <div class="schema-table">
         <h4>📋 crawl_sessions</h4>
         <div class="schema-comment">Tracks crawler execution sessions with statistics and status - used for monitoring and debugging crawler runs</div>
-        <p style="color: #aaa; margin: 15px 0;">Sample records: 0 / Total: varies by table</p>
-        <p style="color: #aaa;">No sample data available</p>
+        <p style="color: #aaa; margin: 15px 0;">Sample records: 1 / Total: varies by table</p>
+        <table class="data-table"><thead><tr><th>id</th><th>session_id</th><th>start_time</th><th>end_time</th><th>target_city</th><th>max_properties</th><th>properties_found</th><th>properties_new</th></tr></thead><tbody><tr><td>1</td><td>crawl-1760200499357</td><td>Sat Oct 11 2025 22:34:59 GMT+0300 (שעון ישראל (קיץ))</td><td>Sat Oct 11 2025 22:36:18 GMT+0300 (שעון ישראל (קיץ))</td><td>חיפה</td><td>1</td><td>1</td><td>1</td></tr></tbody></table><p style="color: #aaa; margin-top: 10px; font-size: 0.9em;">... and 9 more columns</p>
       </div>
     
       <div class="schema-table">
         <h4>📋 migrations</h4>
         <div class="schema-comment">Tracks database schema migrations applied to the database</div>
         <p style="color: #aaa; margin: 15px 0;">Sample records: 1 / Total: varies by table</p>
-        <table class="data-table"><thead><tr><th>id</th><th>name</th><th>applied_at</th></tr></thead><tbody><tr><td>2</td><td>002_duckdb_migration</td><td>Sat Oct 11 2025 00:11:40 GMT+0300 (שעון ישראל (קיץ))</td></tr></tbody></table>
+        <table class="data-table"><thead><tr><th>id</th><th>name</th><th>applied_at</th></tr></thead><tbody><tr><td>2</td><td>002_duckdb_migration</td><td>Sat Oct 11 2025 22:34:59 GMT+0300 (שעון ישראל (קיץ))</td></tr></tbody></table>
       </div>
     
       <div class="schema-table">
         <h4>📋 nearby_schools</h4>
         <div class="schema-comment">Schools near the property (from "בתי ספר" section) - important for families with children</div>
-        <p style="color: #aaa; margin: 15px 0;">Sample records: 0 / Total: varies by table</p>
-        <p style="color: #aaa;">No sample data available</p>
+        <p style="color: #aaa; margin: 15px 0;">Sample records: 5 / Total: varies by table</p>
+        <table class="data-table"><thead><tr><th>id</th><th>property_id</th><th>school_name</th><th>school_type</th><th>grades_offered</th><th>distance_meters</th><th>created_at</th></tr></thead><tbody><tr><td>1</td><td>5BzpHqFwgd7</td><td>מוריהמרדכי אנילביץ' 14, חיפהממלכתי דתיא-ו</td><td><em style="color: #999;">null</em></td><td><em style="color: #999;">null</em></td><td><em style="color: #999;">null</em></td><td>Sat Oct 11 2025 22:36:08 GMT+0300 (שעון ישראל (קיץ))</td></tr><tr><td>2</td><td>5BzpHqFwgd7</td><td>שלוהיצחק שדה 26, חיפהממלכתיא-ו</td><td><em style="color: #999;">null</em></td><td><em style="color: #999;">null</em></td><td><em style="color: #999;">null</em></td><td>Sat Oct 11 2025 22:36:08 GMT+0300 (שעון ישראל (קיץ))</td></tr><tr><td>3</td><td>5BzpHqFwgd7</td><td>יוחנן הקדושח'ורי 24-30, חיפהממלכתיא-ח</td><td><em style="color: #999;">null</em></td><td><em style="color: #999;">null</em></td><td><em style="color: #999;">null</em></td><td>Sat Oct 11 2025 22:36:08 GMT+0300 (שעון ישראל (קיץ))</td></tr></tbody></table>
       </div>
     
       <div class="schema-table">
         <h4>📋 neighborhood_ratings</h4>
         <div class="schema-comment">Community ratings for the neighborhood (from "דירוגי השכנים" section) - ratings on scale of 1-10 for various quality-of-life metrics</div>
-        <p style="color: #aaa; margin: 15px 0;">Sample records: 0 / Total: varies by table</p>
-        <p style="color: #aaa;">No sample data available</p>
+        <p style="color: #aaa; margin: 15px 0;">Sample records: 1 / Total: varies by table</p>
+        <table class="data-table"><thead><tr><th>id</th><th>property_id</th><th>community_feeling</th><th>cleanliness_maintenance</th><th>schools_quality</th><th>public_transport</th><th>shopping_convenience</th><th>entertainment_leisure</th></tr></thead><tbody><tr><td>1</td><td>5BzpHqFwgd7</td><td>7</td><td>5</td><td>9</td><td>8</td><td>6</td><td>6</td></tr></tbody></table><p style="color: #aaa; margin-top: 10px; font-size: 0.9em;">... and 2 more columns</p>
       </div>
     
       <div class="schema-table">
@@ -276,15 +276,15 @@
       <div class="schema-table">
         <h4>📋 price_comparisons</h4>
         <div class="schema-comment">Price comparison data by room count (from "מחירי דירות" section) - shows average prices and trends for similar properties</div>
-        <p style="color: #aaa; margin: 15px 0;">Sample records: 0 / Total: varies by table</p>
-        <p style="color: #aaa;">No sample data available</p>
+        <p style="color: #aaa; margin: 15px 0;">Sample records: 2 / Total: varies by table</p>
+        <table class="data-table"><thead><tr><th>id</th><th>property_id</th><th>room_count</th><th>average_price</th><th>old_price</th><th>new_price</th><th>price_trend</th><th>created_at</th></tr></thead><tbody><tr><td>1</td><td>5BzpHqFwgd7</td><td>3</td><td>10,047,650</td><td><em style="color: #999;">null</em></td><td><em style="color: #999;">null</em></td><td><em style="color: #999;">null</em></td><td>Sat Oct 11 2025 22:36:15 GMT+0300 (שעון ישראל (קיץ))</td></tr><tr><td>2</td><td>5BzpHqFwgd7</td><td>5</td><td>10,167,650</td><td><em style="color: #999;">null</em></td><td><em style="color: #999;">null</em></td><td><em style="color: #999;">null</em></td><td>Sat Oct 11 2025 22:36:15 GMT+0300 (שעון ישראל (קיץ))</td></tr></tbody></table>
       </div>
     
       <div class="schema-table">
         <h4>📋 properties</h4>
         <div class="schema-comment">Main table storing comprehensive property listings data from Madlan.co.il including basic info, amenities, location, and pricing details</div>
-        <p style="color: #aaa; margin: 15px 0;">Sample records: 0 / Total: varies by table</p>
-        <p style="color: #aaa;">No sample data available</p>
+        <p style="color: #aaa; margin: 15px 0;">Sample records: 1 / Total: varies by table</p>
+        <table class="data-table"><thead><tr><th>id</th><th>url</th><th>source_url</th><th>price</th><th>rooms</th><th>size</th><th>floor</th><th>total_floors</th></tr></thead><tbody><tr><td>5BzpHqFwgd7</td><td>https://www.madlan.co.il/listings/5BzpHqFwgd7</td><td><em style="color: #999;">null</em></td><td>1,700,000</td><td>3</td><td>120</td><td>2</td><td>3</td></tr></tbody></table><p style="color: #aaa; margin-top: 10px; font-size: 0.9em;">... and 35 more columns</p>
       </div>
     
       <div class="schema-table">
@@ -305,7 +305,7 @@
 
     <div class="section">
       <h2>🏠 Sample Properties Data</h2>
-      <p>No properties found in database.</p>
+      <table class="data-table"><thead><tr><th>ID</th><th>מחיר</th><th>חדרים</th><th>מ"ר</th><th>קומה</th><th>כתובת</th><th>עיר</th><th>נוסף ב</th></tr></thead><tbody><tr><td><code>5BzpHqFwgd7</code></td><td>₪1,700,000</td><td>3</td><td>120</td><td>2</td><td>וואדי 10</td><td>חיפה</td><td>11.10.2025</td></tr></tbody></table>
     </div>
 
     <div class="section">

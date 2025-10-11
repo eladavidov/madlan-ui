@@ -6,6 +6,7 @@ import { DuckDBConnection } from '../database/connectionDuckDB.js';
 
 async function checkTableCounts() {
   const db = new DuckDBConnection('./data/databases/properties.duckdb');
+  await db.initialize();
 
   try {
     console.log('📊 Checking row counts in all tables...\n');
