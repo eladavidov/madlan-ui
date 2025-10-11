@@ -13,15 +13,19 @@ export class TransactionHistoryRepository {
    * Insert a single transaction history record
    */
   async insert(transaction: TransactionHistoryInput): Promise<void> {
+    // Generate manual ID (DuckDB doesn't support sequences)
+    const id = await this.getNextId();
+
     const sql = `
       INSERT INTO transaction_history (
-        property_id, transaction_address, transaction_date,
+        id, property_id, transaction_address, transaction_date,
         transaction_price, transaction_size, transaction_price_per_sqm,
         transaction_floor, transaction_rooms, year_built
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
 
     await this.db.execute(sql, [
+      id,
       transaction.property_id,
       transaction.transaction_address || null,
       transaction.transaction_date || null,
@@ -32,6 +36,15 @@ export class TransactionHistoryRepository {
       transaction.transaction_rooms || null,
       transaction.year_built || null
     ]);
+  }
+
+  /**
+   * Get next available ID (manual ID generation for DuckDB)
+   */
+  private async getNextId(): Promise<number> {
+    const sql = `SELECT COALESCE(MAX(id), 0) + 1 as next_id FROM transaction_history`;
+    const result = await this.db.queryOne<{ next_id: number }>(sql, []);
+    return result?.next_id || 1;
   }
 
   /**

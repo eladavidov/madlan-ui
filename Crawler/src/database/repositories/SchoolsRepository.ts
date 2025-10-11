@@ -13,20 +13,33 @@ export class SchoolsRepository {
    * Insert a single school record
    */
   async insert(school: NearbySchoolInput): Promise<void> {
+    // Generate manual ID (DuckDB doesn't support sequences)
+    const id = await this.getNextId();
+
     const sql = `
       INSERT INTO nearby_schools (
-        property_id, school_name, school_type,
+        id, property_id, school_name, school_type,
         grades_offered, distance_meters
-      ) VALUES (?, ?, ?, ?, ?)
+      ) VALUES (?, ?, ?, ?, ?, ?)
     `;
 
     await this.db.execute(sql, [
+      id,
       school.property_id,
       school.school_name,
       school.school_type || null,
       school.grades_offered || null,
       school.distance_meters || null
     ]);
+  }
+
+  /**
+   * Get next available ID (manual ID generation for DuckDB)
+   */
+  private async getNextId(): Promise<number> {
+    const sql = `SELECT COALESCE(MAX(id), 0) + 1 as next_id FROM nearby_schools`;
+    const result = await this.db.queryOne<{ next_id: number }>(sql, []);
+    return result?.next_id || 1;
   }
 
   /**

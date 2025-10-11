@@ -13,14 +13,18 @@ export class ConstructionProjectsRepository {
    * Insert a single construction project record
    */
   async insert(project: ConstructionProjectInput): Promise<void> {
+    // Generate manual ID (DuckDB doesn't support sequences)
+    const id = await this.getNextId();
+
     const sql = `
       INSERT INTO new_construction_projects (
-        property_id, project_name, project_location,
+        id, property_id, project_name, project_location,
         distance_meters, project_status, completion_date
-      ) VALUES (?, ?, ?, ?, ?, ?)
+      ) VALUES (?, ?, ?, ?, ?, ?, ?)
     `;
 
     await this.db.execute(sql, [
+      id,
       project.property_id,
       project.project_name || null,
       project.project_location || null,
@@ -28,6 +32,15 @@ export class ConstructionProjectsRepository {
       project.project_status || null,
       project.completion_date || null
     ]);
+  }
+
+  /**
+   * Get next available ID (manual ID generation for DuckDB)
+   */
+  private async getNextId(): Promise<number> {
+    const sql = `SELECT COALESCE(MAX(id), 0) + 1 as next_id FROM new_construction_projects`;
+    const result = await this.db.queryOne<{ next_id: number }>(sql, []);
+    return result?.next_id || 1;
   }
 
   /**

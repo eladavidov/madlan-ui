@@ -17,9 +17,19 @@
 import { chromium } from "playwright-extra";
 import StealthPlugin from "puppeteer-extra-plugin-stealth";
 import { extractPropertyData, extractImageUrls } from "../extractors/propertyExtractor.js";
+import { extractTransactionHistory } from "../extractors/transactionExtractor.js";
+import { extractNearbySchools } from "../extractors/schoolsExtractor.js";
+import { extractNeighborhoodRatings } from "../extractors/ratingsExtractor.js";
+import { extractPriceComparisons } from "../extractors/priceComparisonExtractor.js";
+import { extractConstructionProjects } from "../extractors/constructionExtractor.js";
 import { PropertyRepository } from "../database/repositories/PropertyRepository.js";
 import { ImageRepository } from "../database/repositories/ImageRepository.js";
 import { CrawlSessionRepository } from "../database/repositories/CrawlSessionRepository.js";
+import { TransactionHistoryRepository } from "../database/repositories/TransactionHistoryRepository.js";
+import { SchoolsRepository } from "../database/repositories/SchoolsRepository.js";
+import { RatingsRepository } from "../database/repositories/RatingsRepository.js";
+import { PriceComparisonRepository } from "../database/repositories/PriceComparisonRepository.js";
+import { ConstructionProjectsRepository } from "../database/repositories/ConstructionProjectsRepository.js";
 import { ImageStore } from "../storage/imageStore.js";
 import { logger } from "../utils/logger.js";
 import { config } from "../utils/config.js";
@@ -70,6 +80,13 @@ export async function crawlPropertiesWithFreshBrowser(
   const imageRepo = new ImageRepository(db);
   const sessionRepo = new CrawlSessionRepository(db);
   const imageStore = new ImageStore(db);
+
+  // Phase 5B: Enhanced data repositories
+  const transactionRepo = new TransactionHistoryRepository(db);
+  const schoolsRepo = new SchoolsRepository(db);
+  const ratingsRepo = new RatingsRepository(db);
+  const priceComparisonRepo = new PriceComparisonRepository(db);
+  const constructionRepo = new ConstructionProjectsRepository(db);
 
   const stats: SingleBrowserStats = {
     propertiesProcessed: 0,
@@ -256,6 +273,84 @@ export async function crawlPropertiesWithFreshBrowser(
       } else {
         logger.info(`🆕 Added new property`);
       }
+
+      // =================================================================
+      // PHASE 5B: Extract Enhanced Data (transaction history, schools, etc.)
+      // =================================================================
+      logger.info("🔍 Extracting enhanced data (Phase 5B)...");
+
+      // 1. Transaction History
+      try {
+        logger.info("  📊 Extracting transaction history...");
+        const transactions = await extractTransactionHistory(page, propertyData.id);
+        if (transactions.length > 0) {
+          await transactionRepo.insertMany(transactions);
+          logger.info(`  ✅ Saved ${transactions.length} transactions`);
+        } else {
+          logger.info(`  ⚠️  No transaction history found`);
+        }
+      } catch (error: any) {
+        logger.warn(`  ⚠️  Transaction extraction failed: ${error.message}`);
+      }
+
+      // 2. Nearby Schools
+      try {
+        logger.info("  🏫 Extracting nearby schools...");
+        const schools = await extractNearbySchools(page, propertyData.id);
+        if (schools.length > 0) {
+          await schoolsRepo.insertMany(schools);
+          logger.info(`  ✅ Saved ${schools.length} schools`);
+        } else {
+          logger.info(`  ⚠️  No schools data found`);
+        }
+      } catch (error: any) {
+        logger.warn(`  ⚠️  Schools extraction failed: ${error.message}`);
+      }
+
+      // 3. Neighborhood Ratings
+      try {
+        logger.info("  ⭐ Extracting neighborhood ratings...");
+        const ratings = await extractNeighborhoodRatings(page, propertyData.id);
+        if (ratings) {
+          await ratingsRepo.upsert(ratings);
+          logger.info(`  ✅ Saved neighborhood ratings`);
+        } else {
+          logger.info(`  ⚠️  No ratings data found`);
+        }
+      } catch (error: any) {
+        logger.warn(`  ⚠️  Ratings extraction failed: ${error.message}`);
+      }
+
+      // 4. Price Comparisons
+      try {
+        logger.info("  💰 Extracting price comparisons...");
+        const priceComps = await extractPriceComparisons(page, propertyData.id);
+        if (priceComps.length > 0) {
+          await priceComparisonRepo.insertMany(priceComps);
+          logger.info(`  ✅ Saved ${priceComps.length} price comparisons`);
+        } else {
+          logger.info(`  ⚠️  No price comparison data found`);
+        }
+      } catch (error: any) {
+        logger.warn(`  ⚠️  Price comparison extraction failed: ${error.message}`);
+      }
+
+      // 5. Construction Projects
+      try {
+        logger.info("  🏗️  Extracting construction projects...");
+        const projects = await extractConstructionProjects(page, propertyData.id);
+        if (projects.length > 0) {
+          await constructionRepo.insertMany(projects);
+          logger.info(`  ✅ Saved ${projects.length} construction projects`);
+        } else {
+          logger.info(`  ⚠️  No construction projects found`);
+        }
+      } catch (error: any) {
+        logger.warn(`  ⚠️  Construction extraction failed: ${error.message}`);
+      }
+
+      logger.info("✅ Enhanced data extraction complete");
+      // =================================================================
 
       // Extract images
       const imageUrls = await extractImageUrls(page);

@@ -16,16 +16,20 @@ export class RatingsRepository {
     // First, try to delete existing ratings
     await this.deleteByPropertyId(ratings.property_id);
 
+    // Generate manual ID (DuckDB doesn't support sequences)
+    const id = await this.getNextId();
+
     // Then insert new ratings
     const sql = `
       INSERT INTO neighborhood_ratings (
-        property_id, community_feeling, cleanliness_maintenance,
+        id, property_id, community_feeling, cleanliness_maintenance,
         schools_quality, public_transport, shopping_convenience,
         entertainment_leisure, overall_rating
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
 
     await this.db.execute(sql, [
+      id,
       ratings.property_id,
       ratings.community_feeling || null,
       ratings.cleanliness_maintenance || null,
@@ -35,6 +39,15 @@ export class RatingsRepository {
       ratings.entertainment_leisure || null,
       ratings.overall_rating || null
     ]);
+  }
+
+  /**
+   * Get next available ID (manual ID generation for DuckDB)
+   */
+  private async getNextId(): Promise<number> {
+    const sql = `SELECT COALESCE(MAX(id), 0) + 1 as next_id FROM neighborhood_ratings`;
+    const result = await this.db.queryOne<{ next_id: number }>(sql, []);
+    return result?.next_id || 1;
   }
 
   /**

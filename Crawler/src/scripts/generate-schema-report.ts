@@ -145,8 +145,32 @@ async function generateSchemaReport() {
 
       html += `<div class="table-count">📊 Row Count: <strong>${rowCount}</strong> ${rowCount === 0 ? '(Empty - no data yet)' : ''}</div>`;
 
-      // Get sample data (up to 3 rows)
-      const sampleData = rowCount > 0 ? await db.query(`SELECT * FROM ${table.name} LIMIT 3`) : [];
+      // Get sample data (up to 5 rows) - try to sample from different properties if possible
+      let sampleData: any[] = [];
+      if (rowCount > 0) {
+        // Check if table has property_id column (to sample from multiple properties)
+        const hasPropertyId = columns.some((col: any) => col.column_name === 'property_id');
+
+        if (hasPropertyId && table.name !== 'properties') {
+          // For child tables: sample from up to 5 different properties
+          sampleData = await db.query(`
+            SELECT * FROM ${table.name}
+            WHERE property_id IN (
+              SELECT DISTINCT property_id FROM ${table.name}
+              ORDER BY RANDOM()
+              LIMIT 5
+            )
+            LIMIT 5
+          `);
+        } else {
+          // For properties table and tables without property_id: sample randomly
+          sampleData = await db.query(`
+            SELECT * FROM ${table.name}
+            ORDER BY RANDOM()
+            LIMIT 5
+          `);
+        }
+      }
 
       // Build table with complete metadata
       html += `
@@ -156,7 +180,7 @@ async function generateSchemaReport() {
                 <th style="width: 450px">Description</th>
                 <th style="width: 120px">Type</th>
                 <th style="width: 100px">Nullable</th>
-                <th>Sample Data (up to 3 rows)</th>
+                <th>Sample Data (up to 5 rows from different properties)</th>
             </tr>
 `;
 

@@ -13,14 +13,18 @@ export class PriceComparisonRepository {
    * Insert a single price comparison record
    */
   async insert(comparison: PriceComparisonInput): Promise<void> {
+    // Generate manual ID (DuckDB doesn't support sequences)
+    const id = await this.getNextId();
+
     const sql = `
       INSERT INTO price_comparisons (
-        property_id, room_count, average_price,
+        id, property_id, room_count, average_price,
         old_price, new_price, price_trend
-      ) VALUES (?, ?, ?, ?, ?, ?)
+      ) VALUES (?, ?, ?, ?, ?, ?, ?)
     `;
 
     await this.db.execute(sql, [
+      id,
       comparison.property_id,
       comparison.room_count,
       comparison.average_price || null,
@@ -28,6 +32,15 @@ export class PriceComparisonRepository {
       comparison.new_price || null,
       comparison.price_trend || null
     ]);
+  }
+
+  /**
+   * Get next available ID (manual ID generation for DuckDB)
+   */
+  private async getNextId(): Promise<number> {
+    const sql = `SELECT COALESCE(MAX(id), 0) + 1 as next_id FROM price_comparisons`;
+    const result = await this.db.queryOne<{ next_id: number }>(sql, []);
+    return result?.next_id || 1;
   }
 
   /**
