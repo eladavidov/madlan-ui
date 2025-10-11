@@ -195,7 +195,7 @@ export class PropertyRepository {
   public async findStale(days: number = 30): Promise<Property[]> {
     return await this.db.query<Property>(
       `SELECT * FROM properties
-       WHERE datetime(last_crawled_at) < datetime('now', '-${days} days')`
+       WHERE last_crawled_at < CURRENT_TIMESTAMP - INTERVAL '${days} days'`
     );
   }
 }

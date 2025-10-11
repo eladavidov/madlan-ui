@@ -79,7 +79,7 @@ export class CrawlSessionRepository {
     const sql = `
       UPDATE crawl_sessions
       SET status = ?,
-          end_time = datetime('now'),
+          end_time = CURRENT_TIMESTAMP,
           error_message = ?
       WHERE session_id = ?
     `;
@@ -98,7 +98,7 @@ export class CrawlSessionRepository {
     const sql = `
       UPDATE crawl_sessions
       SET status = 'interrupted',
-          end_time = datetime('now')
+          end_time = CURRENT_TIMESTAMP
       WHERE session_id = ?
     `;
 
@@ -208,7 +208,7 @@ export class CrawlSessionRepository {
   public async deleteOldSessions(days: number = 90): Promise<void> {
     await this.db.execute(
       `DELETE FROM crawl_sessions
-       WHERE datetime(start_time) < datetime('now', '-${days} days')`
+       WHERE start_time < CURRENT_TIMESTAMP - INTERVAL '${days} days'`
     );
   }
 

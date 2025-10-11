@@ -261,36 +261,25 @@ export async function crawlPropertiesWithFreshBrowser(
       const imageUrls = await extractImageUrls(page);
       logger.info(`📸 Found ${imageUrls.length} images`);
 
-      if (imageUrls.length > 0) {
+      // Only process images if downloadImages is enabled
+      if (downloadImages && imageUrls.length > 0) {
         // Delete old image records
         await imageRepo.deleteByPropertyId(propertyData.id);
 
-        // Download images if enabled
-        if (downloadImages) {
-          try {
-            const downloadStats = await imageStore.downloadPropertyImages(
-              propertyData.id,
-              imageUrls,
-              { maxRetries: imageRetries, timeout: imageTimeout }
-            );
+        try {
+          const downloadStats = await imageStore.downloadPropertyImages(
+            propertyData.id,
+            imageUrls,
+            { maxRetries: imageRetries, timeout: imageTimeout }
+          );
 
-            stats.imagesDownloaded += downloadStats.successful;
-            stats.imagesFailed += downloadStats.failed;
+          stats.imagesDownloaded += downloadStats.successful;
+          stats.imagesFailed += downloadStats.failed;
 
-            logger.info(`📥 Images: ${downloadStats.successful} downloaded, ${downloadStats.failed} failed`);
-          } catch (error: any) {
-            logger.error(`Error downloading images: ${error.message}`);
-            stats.imagesFailed += imageUrls.length;
-          }
-        } else {
-          // Just save image URLs
-          const images = imageUrls.map((imgUrl, index) => ({
-            property_id: propertyData.id,
-            image_url: imgUrl,
-            image_order: index,
-            is_main_image: index === 0,
-          }));
-          await imageRepo.insertMany(images);
+          logger.info(`📥 Images: ${downloadStats.successful} downloaded, ${downloadStats.failed} failed`);
+        } catch (error: any) {
+          logger.error(`Error downloading images: ${error.message}`);
+          stats.imagesFailed += imageUrls.length;
         }
       }
 

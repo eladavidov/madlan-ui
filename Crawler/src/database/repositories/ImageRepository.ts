@@ -23,9 +23,9 @@ export class ImageRepository {
     const sql = `
       INSERT INTO property_images (
         id, property_id, image_url, image_order, is_main_image,
-        image_type, width, height, file_size, image_data
+        image_type, width, height, file_size
       )
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
 
     await this.db.execute(sql, [
@@ -38,7 +38,6 @@ export class ImageRepository {
       image.width ?? null,
       image.height ?? null,
       image.file_size ?? null,
-      image.image_data ?? null,
     ]);
 
     return nextId;
@@ -80,18 +79,18 @@ export class ImageRepository {
   }
 
   /**
-   * Update download status with BLOB data
+   * Update download status with local path
    */
   public async updateDownloadStatus(
     id: number,
     success: boolean,
-    imageData?: Buffer,
+    localPath?: string,
     error?: string
   ): Promise<void> {
     const sql = `
       UPDATE property_images
       SET is_downloaded = ?,
-          image_data = ?,
+          local_path = ?,
           download_date = CURRENT_TIMESTAMP,
           download_error = ?
       WHERE id = ?
@@ -99,7 +98,7 @@ export class ImageRepository {
 
     await this.db.execute(sql, [
       success ? 1 : 0,
-      imageData || null,
+      localPath || null,
       error || null,
       id,
     ]);
@@ -181,28 +180,5 @@ export class ImageRepository {
       pending: (result?.total || 0) - (result?.downloaded || 0),
       failed: result?.failed || 0,
     };
-  }
-
-  /**
-   * Get image BLOB data
-   */
-  public async getImageData(id: number): Promise<Buffer | null> {
-    const result = await this.db.queryOne<{ image_data: Buffer }>(
-      "SELECT image_data FROM property_images WHERE id = ?",
-      [id]
-    );
-    return result?.image_data || null;
-  }
-
-  /**
-   * Get all image data for a property
-   */
-  public async getPropertyImageData(propertyId: string): Promise<{ id: number; image_order: number; image_data: Buffer | null }[]> {
-    return this.db.query<{ id: number; image_order: number; image_data: Buffer | null }>(
-      `SELECT id, image_order, image_data FROM property_images
-       WHERE property_id = ?
-       ORDER BY image_order ASC`,
-      [propertyId]
-    );
   }
 }

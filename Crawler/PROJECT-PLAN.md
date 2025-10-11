@@ -11,15 +11,29 @@
 
 **If you're opening this file in a new session, read this section first.**
 
-### Current Status (2025-10-10 Evening - Final)
+### Current Status (2025-10-11 Morning - Production Ready)
 
-**✅ PHASE 5C COMPLETE + TESTED + CLEANED** - DuckDB-Only + Manual ID Generation
+**✅ ALL DATETIME BUGS FIXED + READY FOR HAIFA PRODUCTION DEPLOYMENT**
 
-**Completed Work (2025-10-10 Evening)**:
-- ✅ Removed SQLite support (DuckDB-only architecture)
-- ✅ Fixed DuckDB schema (removed sequences, using manual ID generation)
-- ✅ Updated repositories (CrawlSessionRepository, ImageRepository) to manually generate IDs
-- ✅ TypeScript build succeeded
+**Target**: Haifa properties for sale (~3,600 properties available)
+**Search URL**: https://www.madlan.co.il/for-sale/%D7%97%D7%99%D7%A4%D7%94-%D7%99%D7%A9%D7%A8%D7%90%D7%9C?tracking_search_source=new_search&marketplace=residential
+
+**Completed Work (2025-10-11 Morning)**:
+- ✅ **DuckDB DateTime Compatibility** - Fixed 4 critical bugs:
+  - ✅ CrawlSessionRepository.completeSession(): `datetime('now')` → `CURRENT_TIMESTAMP`
+  - ✅ CrawlSessionRepository.interruptSession(): `datetime('now')` → `CURRENT_TIMESTAMP`
+  - ✅ CrawlSessionRepository.deleteOldSessions(): Fixed interval syntax
+  - ✅ PropertyRepository.findStale(): Fixed interval syntax
+- ✅ **Foreign Key Constraint Handling** - Wrapped session completion in try-catch (graceful error handling)
+- ✅ **Schema Report Generated** - `tests/schema-report-with-data.html` created with:
+  - ✅ Complete table and column documentation (135+ COMMENT statements)
+  - ✅ Sample data for all properties columns
+  - ✅ Production deployment information
+- ✅ **Previous Phase 5C Work**:
+  - ✅ Removed SQLite support (DuckDB-only architecture)
+  - ✅ Fixed DuckDB schema (removed sequences, using manual ID generation)
+  - ✅ Updated repositories (CrawlSessionRepository, ImageRepository) to manually generate IDs
+  - ✅ TypeScript build succeeded
 - ✅ **Monitoring Capabilities Verified** (2-property test crawl):
   - ✅ ProgressReporter: Live updates every 15 seconds (confirmed at 15s, 30s, 45s, 1m intervals)
   - ✅ Winston logging: Comprehensive logs to `logs/crawler.log`
@@ -47,7 +61,7 @@
   - ✅ Updated PROJECT-PLAN.md (this file)
 
 **Ready for Large-Scale Deployment**:
-The crawler is **production-ready** with full monitoring and partial resume capabilities. For 3K properties:
+The crawler is **production-ready** with full monitoring and partial resume capabilities. For ~3,600 Haifa properties:
 - **Crash recovery**: Restarting will update already-crawled properties and continue
 - **Image optimization**: Already-downloaded images are skipped (fast)
 - **Data freshness**: Existing properties get updated with latest data (prices can change)
@@ -58,17 +72,19 @@ The crawler is **production-ready** with full monitoring and partial resume capa
   - **Workaround**: Can disable image downloads initially (`--no-images` flag), add images later in smaller batches
   - **Status**: Not blocking production - crawler works perfectly for property data extraction
 
-**Immediate Next Steps for Production 3000-Property Crawl**:
-1. ✅ **Testing Complete**: All systems verified working
+**Immediate Next Steps for Production Haifa Crawl**:
+1. ✅ **Testing Complete**: All datetime bugs fixed and verified
 2. ✅ **Cleanup Complete**: Crawler directory cleaned and organized
-3. ✅ **Documentation Complete**: CLAUDE.md and PROJECT-PLAN.md updated
-4. 🚀 **Ready for Production Deployment**:
+3. ✅ **Documentation Complete**: CLAUDE.md, PROJECT-PLAN.md, and schema report updated
+4. ✅ **Schema Report**: `tests/schema-report-with-data.html` generated with full documentation
+5. 🚀 **Ready for Production Deployment** (~3,600 Haifa properties for sale):
    - **Option A** (Recommended): Run without images first, add images later:
      ```bash
-     node dist/main.js --city חיפה --max-properties 3000 --max-pages 100 --no-images
+     node dist/main.js --city חיפה --max-properties 3600 --max-pages 120 --no-images
      ```
    - **Option B**: Run with images in smaller batches (500-1000 properties/night)
    - **Monitor**: `tail -f logs/crawler.log` to track progress
+   - **Search URL**: https://www.madlan.co.il/for-sale/חיפה-ישראל (filters for properties for sale in Haifa)
 
 ---
 
@@ -1675,6 +1691,6 @@ Enhanced resume behavior:
 
 ---
 
-**Last Updated**: 2025-10-10
+**Last Updated**: 2025-10-11
 **Updated By**: Claude Code AI Assistant
-**Next Review**: After Night 1 production crawl completes (500 properties)
+**Next Review**: Before starting ~3,600 property Haifa production crawl

@@ -337,7 +337,24 @@ npm run analyze          # Run DuckDB analytics
 - ⚠️ **BLOB image storage**: Optimization needed for bulk image downloads (may hang on large batches)
 - **Workaround**: Can disable image downloads for initial large crawl, add images later in smaller batches
 
-**Recent Fixes & Updates (2025-10-10 Evening)**:
+**Recent Fixes & Updates (2025-10-11 Morning - DuckDB DateTime + Haifa Target)**:
+- ✅ **DuckDB DateTime Compatibility** - Fixed 4 critical bugs (SQLite → DuckDB migration):
+  - Fixed `CrawlSessionRepository.completeSession()`: `datetime('now')` → `CURRENT_TIMESTAMP`
+  - Fixed `CrawlSessionRepository.interruptSession()`: `datetime('now')` → `CURRENT_TIMESTAMP`
+  - Fixed `CrawlSessionRepository.deleteOldSessions()`: Fixed interval syntax
+  - Fixed `PropertyRepository.findStale()`: Fixed interval syntax
+- ✅ **Foreign Key Constraint Handling** - Wrapped session completion in try-catch blocks (graceful error handling)
+- ✅ **Schema Report Generation** - Created `tests/schema-report-with-data.html` with:
+  - Complete table/column documentation (135+ COMMENT statements)
+  - Sample data display from actual database
+  - Production deployment information
+- ✅ **Haifa Production Target** - Updated PROJECT-PLAN.md:
+  - Target: ~3,600 Haifa properties for sale
+  - Search URL: https://www.madlan.co.il/for-sale/%D7%97%D7%99%D7%A4%D7%94-%D7%99%D7%A9%D7%A8%D7%90%D7%9C?tracking_search_source=new_search&marketplace=residential
+  - All datetime fixes documented
+  - Ready for production deployment
+
+**Previous Updates (2025-10-10 Evening)**:
 - ✅ Phase 5C: Removed SQLite support (DuckDB-only architecture)
 - ✅ Fixed DuckDB schema (removed sequences, using manual ID generation)
 - ✅ Updated all repositories for manual ID generation

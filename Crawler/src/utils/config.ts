@@ -15,10 +15,9 @@ if (existsSync(".env")) {
  * Crawler configuration
  */
 export const config = {
-  // Database
+  // Database (DuckDB-only)
   database: {
-    path: process.env.DB_PATH || "./data/databases/properties.db",
-    duckdbPath: process.env.DUCKDB_PATH || "./data/databases/analytics.duckdb",
+    path: process.env.DUCKDB_PATH || "./data/databases/properties.duckdb",
   },
 
   // Storage

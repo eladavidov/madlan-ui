@@ -40,6 +40,7 @@ async function main() {
         city: options.city,
         maxSearchPages: options.maxPages,
         maxProperties: options.maxProperties,
+        downloadImages: !options.noImages,
       });
 
       console.log("\n✅ Crawl completed successfully!");
@@ -90,6 +91,7 @@ function parseArgs(args: string[]): {
   city?: string;
   maxPages?: number;
   maxProperties?: number;
+  noImages: boolean;
   urls: string[];
 } {
   const options = {
@@ -97,6 +99,7 @@ function parseArgs(args: string[]): {
     city: undefined as string | undefined,
     maxPages: undefined as number | undefined,
     maxProperties: undefined as number | undefined,
+    noImages: false,
     urls: [] as string[],
   };
 
@@ -111,6 +114,8 @@ function parseArgs(args: string[]): {
       options.maxPages = parseInt(args[++i], 10);
     } else if (arg === "--max-properties" && i + 1 < args.length) {
       options.maxProperties = parseInt(args[++i], 10);
+    } else if (arg === "--no-images") {
+      options.noImages = true;
     } else if (arg.startsWith("http")) {
       options.urls.push(arg);
     }
@@ -137,6 +142,7 @@ function showHelp() {
   console.log("  --city <city>              Target city (default: חיפה)");
   console.log("  --max-pages <n>            Max search pages (default: 5)");
   console.log("  --max-properties <n>       Max properties to crawl (default: 100)");
+  console.log("  --no-images                Skip image downloads (property data only)");
   console.log("  --help, -h                 Show this help");
   console.log();
   console.log("Examples:");
