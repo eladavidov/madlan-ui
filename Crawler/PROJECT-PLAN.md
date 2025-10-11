@@ -58,13 +58,74 @@
 - ✅ Shows data diversity (multiple prices, neighborhoods, property types)
 - ✅ 39 total rows across all tables (7.8x more than initial 5 rows)
 
-### Production Deployment Ready 🚀
-The crawler is **fully verified and production-ready** for the ~3,600 Haifa property crawl:
-1. ✅ **10-property verification test**: 70% success rate (7 new, 3 failed/duplicates)
-2. ✅ **Database populated**: 9 properties with full data extraction
-3. ✅ **Schema report**: Verified with diverse samples from multiple properties
-4. ✅ **Phase 5B working**: Neighborhood ratings and price comparisons extracted
-5. ✅ **All datetime bugs fixed**: DuckDB compatibility verified
+### 🚀 Production Deployment - Step-by-Step Workflow
+
+**📋 Pre-Production Checklist**:
+- ✅ **Database Cleaned**: Fresh DuckDB database (old test data removed)
+- ✅ **Code Verified**: All Phase 5B extractors integrated and working
+- ✅ **Anti-blocking Ready**: 70% test success → expect 80-90% with production delays (60-120s)
+- ✅ **Monitoring Ready**: Progress updates, logging, error tracking all working
+
+**🔄 Production Crawling Workflow** (FOLLOW STRICTLY):
+
+**Step 1: Small Batch Test (50 properties)**
+```bash
+cd Crawler
+export BROWSER_LAUNCH_DELAY_MIN=60000
+export BROWSER_LAUNCH_DELAY_MAX=120000
+node dist/main.js --city חיפה --max-properties 50 --max-pages 1 --no-images
+```
+**Time**: ~1-1.5 hours | **Expected Success**: 80-90%
+
+**Step 2: Verify Database (CRITICAL - DO NOT SKIP)**
+```bash
+npx ts-node src/scripts/check-table-counts.ts
+npx ts-node src/scripts/generate-schema-report.ts
+```
+**Open report**: `file:///C:/Src/Madlan/Crawler/tests/schema-report-with-data.html`
+
+**🚨 STOP CRAWLING IF**:
+- ❌ Properties table has < 40 rows (less than 80% success)
+- ❌ Neighborhood_ratings table is empty
+- ❌ Price_comparisons table is empty
+- ❌ Success rate < 50%
+- ❌ Major blocking issues (403 errors, CAPTCHAs)
+
+**✅ CONTINUE IF**:
+- ✅ Properties table has 40+ rows (80%+ success)
+- ✅ Neighborhood_ratings has data (most properties)
+- ✅ Price_comparisons has data (most properties)
+- ✅ No major blocking issues
+
+**Step 3: Medium Batch (200 properties)** - Only if Step 2 passed
+```bash
+node dist/main.js --city חיפה --max-properties 200 --max-pages 1 --no-images
+```
+**Time**: ~4-6 hours | **Verify database again**
+
+**Step 4: Large Batch (500 properties)** - Only if Step 3 passed
+```bash
+node dist/main.js --city חיפה --max-properties 500 --max-pages 1 --no-images
+```
+**Time**: ~10-15 hours (overnight) | **Verify database again**
+
+**Step 5: Full Production (3,600 properties)** - Only if all previous steps passed
+```bash
+# Run in batches of 500-1000 over multiple nights
+node dist/main.js --city חיפה --max-properties 1000 --max-pages 1 --no-images  # Night 1
+node dist/main.js --city חיפה --max-properties 2000 --max-pages 1 --no-images  # Night 2
+node dist/main.js --city חיפה --max-properties 3000 --max-pages 1 --no-images  # Night 3
+node dist/main.js --city חיפה --max-properties 3600 --max-pages 120 --no-images  # Night 4 (complete)
+```
+
+**📊 Expected Data Coverage**:
+- ✅ **properties**: 100% of successful crawls
+- ✅ **neighborhood_ratings**: 80%+ of properties
+- ✅ **price_comparisons**: 80%+ of properties
+- ⚠️ **transaction_history**: 0-30% (not all properties have historical data)
+- ⚠️ **nearby_schools**: 0-30% (not all properties have school data)
+- ⚠️ **new_construction_projects**: 0-20% (rare data)
+- ❌ **property_images**: 0% (using --no-images flag)
 
 ---
 
