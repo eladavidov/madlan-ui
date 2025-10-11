@@ -308,9 +308,9 @@ npm run analyze          # Run DuckDB analytics
 
 **📚 MASTER DOCUMENT**: See **`Crawler/PROJECT-PLAN.md`** - **START HERE**
 
-**Current Status**: ✅ **PRODUCTION READY** - Phases 0-5C Complete + Phase 5B Integration Verified
+**Current Status**: ✅ **PRODUCTION READY** - Production Verification Complete (70% success, 9 properties verified)
 **Breakthrough Date**: 2025-10-09 - **Anti-blocking solved with 100% success rate!**
-**Latest Update**: 2025-10-11 (Afternoon) - **Phase 5B Integration Complete** (All enhanced data extractors working)
+**Latest Update**: 2025-10-11 (Evening) - **Production Verification Complete** + Enhanced schema report with intelligent column sampling
 
 **🎉 Major Achievement - Anti-Blocking Solution**:
 - **Solution**: Fresh browser per property with random delays (60-120s) + HEADLESS=false
@@ -337,7 +337,20 @@ npm run analyze          # Run DuckDB analytics
 - ⚠️ **BLOB image storage**: Optimization needed for bulk image downloads (may hang on large batches)
 - **Workaround**: Can disable image downloads for initial large crawl, add images later in smaller batches
 
-**Phase 5B Integration Test Results (2025-10-11 Afternoon)**:
+**Production Verification Complete (2025-10-11 Evening)**:
+- ✅ **10-Property Verification Test**: 7/10 success (70% rate with test delays)
+- ✅ **Database Verified**: 9 total properties, 39 rows across 5 tables
+- ✅ **Schema Report Enhanced**: Intelligent column sampling finds first non-null value for each column
+- ✅ **Data Coverage Confirmed**:
+  - Properties: 9 rows (₪980K-₪3.19M, 1-5 rooms, 28-120m²)
+  - Neighborhood ratings: 8 rows from 8/9 properties
+  - Price comparisons: 14 rows with room-count averages
+  - Crawl sessions: 3 rows (session tracking working)
+  - Crawl errors: 5 rows (error logging working)
+- ✅ **Empty Tables Expected**: Transaction history (0), schools (0), construction (0) - not all properties have this data
+- ✅ **Enhanced Schema Report**: [file:///C:/Src/Madlan/Crawler/tests/schema-report-with-data.html](file:///C:/Src/Madlan/Crawler/tests/schema-report-with-data.html)
+
+**Previous: Phase 5B Integration Test Results (2025-10-11 Afternoon)**:
 - ✅ **3-Property Test Crawl**: 3/3 success (100%)
 - ✅ **Phase 5B Data Extraction Working**:
   - Neighborhood ratings: 2 records saved

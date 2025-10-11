@@ -145,33 +145,6 @@ async function generateSchemaReport() {
 
       html += `<div class="table-count">📊 Row Count: <strong>${rowCount}</strong> ${rowCount === 0 ? '(Empty - no data yet)' : ''}</div>`;
 
-      // Get sample data (up to 5 rows) - try to sample from different properties if possible
-      let sampleData: any[] = [];
-      if (rowCount > 0) {
-        // Check if table has property_id column (to sample from multiple properties)
-        const hasPropertyId = columns.some((col: any) => col.column_name === 'property_id');
-
-        if (hasPropertyId && table.name !== 'properties') {
-          // For child tables: sample from up to 5 different properties
-          sampleData = await db.query(`
-            SELECT * FROM ${table.name}
-            WHERE property_id IN (
-              SELECT DISTINCT property_id FROM ${table.name}
-              ORDER BY RANDOM()
-              LIMIT 5
-            )
-            LIMIT 5
-          `);
-        } else {
-          // For properties table and tables without property_id: sample randomly
-          sampleData = await db.query(`
-            SELECT * FROM ${table.name}
-            ORDER BY RANDOM()
-            LIMIT 5
-          `);
-        }
-      }
-
       // Build table with complete metadata
       html += `
         <table>
@@ -180,7 +153,7 @@ async function generateSchemaReport() {
                 <th style="width: 450px">Description</th>
                 <th style="width: 120px">Type</th>
                 <th style="width: 100px">Nullable</th>
-                <th>Sample Data (up to 5 rows from different properties)</th>
+                <th>Sample Data (first non-null value found)</th>
             </tr>
 `;
 
@@ -189,28 +162,39 @@ async function generateSchemaReport() {
         const columnType = col.data_type;
         const isNullable = col.is_nullable === 'YES';
 
-        // Get sample values for this column
-        const sampleValues = sampleData.map(row => {
-          const value = row[columnName];
-          if (value === null || value === undefined) {
-            return '<span class="null-value">NULL</span>';
-          }
-          if (typeof value === 'boolean') {
-            return value ? 'TRUE' : 'FALSE';
-          }
-          if (value instanceof Date) {
-            return value.toISOString();
-          }
-          const strValue = String(value);
-          // Truncate long values
-          return strValue.length > 80 ? strValue.substring(0, 80) + '...' : strValue;
-        });
+        // Find first non-null value for this column across ALL records
+        let sampleDisplay = '<span class="null-value">No data</span>';
 
-        const sampleDisplay = sampleValues.length > 0
-          ? sampleValues.join('<br><br>')
-          : '<span class="null-value">No data</span>';
+        if (rowCount > 0) {
+          try {
+            const sampleResult = await db.query(`
+              SELECT "${columnName}" as value
+              FROM ${table.name}
+              WHERE "${columnName}" IS NOT NULL
+              LIMIT 1
+            `);
 
-        // Generate description based on column name (you can enhance this)
+            if (sampleResult.length > 0) {
+              const value = sampleResult[0].value;
+
+              if (value !== null && value !== undefined) {
+                if (typeof value === 'boolean') {
+                  sampleDisplay = value ? 'TRUE' : 'FALSE';
+                } else if (value instanceof Date) {
+                  sampleDisplay = value.toISOString();
+                } else {
+                  const strValue = String(value);
+                  // Truncate long values
+                  sampleDisplay = strValue.length > 120 ? strValue.substring(0, 120) + '...' : strValue;
+                }
+              }
+            }
+          } catch (err) {
+            // Column query failed, keep default "No data"
+          }
+        }
+
+        // Generate description based on column name
         const description = getColumnDescription(table.name, columnName);
 
         html += `

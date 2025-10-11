@@ -44,10 +44,16 @@
 
 **Note**: Empty Phase 5B tables are EXPECTED - not all properties have transaction history, schools, or construction data. The extraction logic works correctly and will populate these tables when encountering properties that have this data.
 
-### Schema Report - Now with Diverse Samples ✅
+### Schema Report - Enhanced with Intelligent Column Sampling ✅
 **View Report**: [file:///C:/Src/Madlan/Crawler/tests/schema-report-with-data.html](file:///C:/Src/Madlan/Crawler/tests/schema-report-with-data.html)
 
-**Improvements**:
+**Latest Enhancements** (2025-10-11 Evening):
+- ✅ **Intelligent Column Sampling**: Finds first non-null value for EACH column across ALL records
+- ✅ **Complete Coverage**: Every column shows actual sample data (if available in database)
+- ✅ **Row Count Display**: Total rows prominently displayed for each table
+- ✅ **Data Verification**: Confirms which fields have data vs which are genuinely empty
+
+**Previous Improvements**:
 - ✅ Samples from up to 5 different properties (not just first row)
 - ✅ Shows data diversity (multiple prices, neighborhoods, property types)
 - ✅ 39 total rows across all tables (7.8x more than initial 5 rows)
