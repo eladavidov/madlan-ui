@@ -1,12 +1,55 @@
 i# Madlan Crawler - Project Status
 
-**Status**: ✅ **PRODUCTION READY - Testing Underway**
-**Last Updated**: 2025-10-12 (Mid-Afternoon)
+**Status**: 🔄 **PRODUCTION CRAWL IN PROGRESS - Step 1 (50 Properties)**
+**Last Updated**: 2025-10-12 (Late Afternoon)
 **Version**: Phase 5B Complete - All Field Extractors Fixed + Production Testing
 
 ---
 
 ## 🎯 CURRENT STATUS
+
+### ✅ Production Crawl - Step 1 (COMPLETE)
+
+**Completed Run**:
+- **Target**: 50 properties (max-properties 50, max-pages 1)
+- **Result**: 34/34 properties (100% success rate)
+- **Time**: 67 minutes (1h 7m)
+- **Database**: 36 properties total + all Phase 5B data
+
+### 🔄 Production Crawl - Step 2 (IN PROGRESS)
+
+**Current Run**:
+- **Target**: 200 properties (max-properties 200, max-pages 6)
+- **Command**: `cd Crawler && export BROWSER_LAUNCH_DELAY_MIN=60000 && export BROWSER_LAUNCH_DELAY_MAX=120000 && node dist/main.js --city חיפה --max-properties 200 --max-pages 6 --no-images`
+- **Started**: 2025-10-12 (Late Afternoon)
+- **Database**: Will update/add to existing 36 properties
+- **Anti-blocking**: Production delays (60-120s between properties)
+
+**After Completion**:
+- Verify database with `npx tsx verify-database.ts`
+- If success rate ≥ 80%: Proceed to Step 3 (500 properties)
+- If success rate < 80%: Investigate issues before scaling up
+
+**Progress Monitoring Format**:
+Type "status" for compact updates in this format:
+```
+X/200 complete (Z%) | ⏱️ Time elapsed | ✅ Success rate (X/Y) | ❌ Failures
+Rate: ~X.X properties/min | ETA: ~X hours
+```
+
+**IMPORTANT - Status Format Rules**:
+- Always show progress as `X/200` (completed out of TOTAL target)
+- Do NOT show internal page details like "Property 5/34" or "Page 1/6"
+- Example: "6/200 complete (3%)" - NOT "6/34 complete" or "Page 1/6"
+- The crawler processes 6 pages sequentially, but user only cares about total progress
+
+**Expected Results**:
+- Target: ~200 properties (6 pages × ~34 per page)
+- Success rate: 80-90% (with production delays)
+- Time: ~6-7 hours
+- All Phase 5B extractors working (transactions, schools, ratings, price comparisons, construction projects)
+
+---
 
 ### Latest Test Results (2025-10-12 Mid-Afternoon)
 
@@ -86,26 +129,29 @@ node dist/main.js --city חיפה --max-properties 50 --max-pages 1 --no-images
 
 **Step 2: Medium Batch (200 properties)** - Scale up
 ```bash
-node dist/main.js --city חיפה --max-properties 200 --max-pages 1 --no-images
+node dist/main.js --city חיפה --max-properties 200 --max-pages 6 --no-images
 ```
 **Time**: ~4-6 hours
+**Note**: ~34 properties per page, so 6 pages = ~200 properties
 
 **Step 3: Large Batch (500 properties)** - Overnight
 ```bash
-node dist/main.js --city חיפה --max-properties 500 --max-pages 1 --no-images
+node dist/main.js --city חיפה --max-properties 500 --max-pages 15 --no-images
 ```
 **Time**: ~10-15 hours (overnight)
+**Note**: 15 pages = ~500 properties
 
 **Step 4: Full Production (3,600 properties)** - Multiple nights
 ```bash
 # Night 1: 1000 properties
-node dist/main.js --city חיפה --max-properties 1000 --max-pages 1 --no-images
+node dist/main.js --city חיפה --max-properties 1000 --max-pages 30 --no-images
 
 # Night 2-4: Continue with increasing targets
-node dist/main.js --city חיפה --max-properties 2000 --max-pages 1 --no-images
-node dist/main.js --city חיפה --max-properties 3000 --max-pages 1 --no-images
+node dist/main.js --city חיפה --max-properties 2000 --max-pages 60 --no-images
+node dist/main.js --city חיפה --max-properties 3000 --max-pages 90 --no-images
 node dist/main.js --city חיפה --max-properties 3600 --max-pages 120 --no-images  # Final
 ```
+**Note**: Calculator: target_properties / 34 ≈ pages_needed
 
 ### Verification After Each Batch
 
@@ -315,6 +361,21 @@ DOWNLOAD_IMAGES=false  # Use --no-images flag for initial crawls
 ## 📞 MONITORING & LOGS
 
 ### Progress Monitoring
+
+**Quick Status Check**:
+Type **"status"** in chat for compact progress updates:
+```
+X/TARGET complete (Z%) | ⏱️ Time elapsed | ✅ Success rate (X/Y) | ❌ Failures
+Rate: ~X.X properties/min | ETA: ~X hours
+```
+
+**Status Format Rules** (for AI assistant):
+- Show total target progress: `X/200` or `X/500` (not internal page counts)
+- Example: "45/200 complete (22%)" ✅ Correct
+- Example: "Property 11/34 from Page 2/6" ❌ Wrong (too detailed)
+- User wants to see: completed/total_target percentage
+
+**Detailed Logs**:
 ```bash
 # Watch logs in real-time
 tail -f logs/crawler.log
@@ -358,9 +419,9 @@ npx tsx verify-database.ts
 ### Immediate (Production Crawl)
 1. ✅ **Phase 5B Complete** - All 7 data sections working
 2. ✅ **Validation Test Complete** - 7-property test confirms all 9 fields + Phase 5B working
-3. ⏳ **Step 1**: Run 50-property test batch with production delays (60-120s)
-4. ⏳ **Step 2**: Verify database with ALL sections having data
-5. ⏳ **Step 3**: Scale up to 200 → 500 → full 3,600 properties
+3. ✅ **Step 1: COMPLETE** - 34 properties crawled (100% success, 67 minutes)
+4. 🔄 **Step 2: RUNNING** - 200-property batch with production delays (60-120s) - **IN PROGRESS**
+5. ⏳ **Step 3**: Verify database → Scale up to 500 → full 3,600 properties
 
 ### Future Enhancements (Optional)
 - **Phase 6**: Export & Analytics (JSON/CSV export, DuckDB analytics)
@@ -388,7 +449,9 @@ When starting a new session:
 
 ---
 
-**Last Updated**: 2025-10-12 (Mid-Afternoon)
-**Status**: ✅ PRODUCTION READY - All 9 fields verified + Phase 5B data extraction working
-**Test Results**: 7-property validation complete (5/7 success with 0 delays = 71%)
-**Next Action**: Run 50-property batch with production delays (60-120s) for 80-90% expected success rate
+**Last Updated**: 2025-10-12 (Late Afternoon)
+**Status**: 🔄 PRODUCTION CRAWL IN PROGRESS - Step 2 (200 Properties) - **RUNNING**
+**Step 1 Result**: ✅ Complete - 34/34 properties (100% success, 67 minutes)
+**Current Run**: Step 2 - 200-property batch (6 pages) with production delays (60-120s)
+**Database**: 36 properties + Phase 5B data (upsert mode - existing properties will update)
+**Monitoring**: Type "status" for compact progress updates
