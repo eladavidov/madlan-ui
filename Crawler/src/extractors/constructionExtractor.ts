@@ -1,6 +1,6 @@
 /**
  * Construction Projects Extractor
- * Extracts new construction projects from "בניה חדשה" (New Construction) section
+ * Extracts new construction projects from "פרויקטים חדשים בסביבה" (New Projects in the Area) section
  */
 
 import type { Page } from "playwright";
@@ -8,124 +8,86 @@ import type { ConstructionProjectInput } from "../models/Property.js";
 
 /**
  * Extract new construction projects from property page
- * Returns array of construction projects (first page only, no pagination)
+ * Returns array of construction projects from the "New Projects in the Area" section
  */
 export async function extractConstructionProjects(
   page: Page,
   propertyId: string
 ): Promise<ConstructionProjectInput[]> {
   try {
-    // First, expand the construction section
-    console.log('[constructionExtractor] Expanding construction section...');
+    console.log('[constructionExtractor] Extracting construction projects...');
 
-    try {
-      const constructionHeading = page.locator('h3').filter({ hasText: 'בניה חדשה' }).first();
-      if (await constructionHeading.count() > 0) {
-        // Click parent to expand
-        const parent = constructionHeading.locator('..').first();
-        await parent.click({ timeout: 3000 });
-        // Wait for content to load
-        await page.waitForTimeout(2000);
-        console.log('[constructionExtractor] Section expanded');
-      } else {
-        console.log('[constructionExtractor] Construction heading not found');
-        return [];
-      }
-    } catch (error: any) {
-      console.log('[constructionExtractor] Failed to expand section:', error.message);
-      // Continue anyway - section might already be expanded
-    }
-
-    // Extract construction projects data
     const projects = await page.evaluate((propId) => {
       const results: any[] = [];
 
-      // Find all links that might contain construction project names
-      // Construction projects are typically in links or project cards
+      // Find all links that contain construction project data
+      // Projects have both "חד׳" (rooms) and "קומות" (floors) and a city name
       const allLinks = Array.from(document.querySelectorAll('a'));
 
-      for (const link of allLinks) {
-        const linkText = link.textContent?.trim() || '';
+      const projectLinks = allLinks.filter(link => {
+        const text = link.textContent?.trim() || '';
+        return text.includes('חד׳') && text.includes('קומות') &&
+               (text.includes('חיפה') || text.includes('נשר') || text.includes('נהריה') ||
+                text.includes('קרית') || text.includes('עכו'));
+      });
 
-        // Construction project links might contain:
-        // - "פרויקט" (project)
-        // - Hebrew project names with building details
-        // - Address with "דירות X חד'" pattern
-        if (linkText.length < 5) {
-          continue;
-        }
+      console.log(`[constructionExtractor] Found ${projectLinks.length} project links`);
 
-        // Check if this looks like a construction project
-        // Projects typically have: name, "דירות X-Y חד'", "X קומות", address
-        const isProject =
-          linkText.includes('דירות') &&
-          linkText.includes('חד\'') &&
-          (linkText.includes('קומות') || linkText.includes('קומה'));
+      for (const link of projectLinks) {
+        const text = link.textContent?.trim() || '';
 
-        if (!isProject) {
-          continue;
-        }
-
-        // Parse project data from link text
-        // Format: "Project Name\nדירות 5-3 חד'\nX קומות\nAddress"
-        const lines = linkText.split('\n').map(l => l.trim()).filter(l => l.length > 0);
-
-        if (lines.length < 2) {
+        if (text.length < 10) {
           continue;
         }
 
         const projectData: any = {
-          property_id: propId,
-          project_name: lines[0]
+          property_id: propId
         };
 
-        // Parse remaining lines
-        for (let i = 1; i < lines.length; i++) {
-          const line = lines[i];
+        // Extract project name (text before "דירות")
+        const nameMatch = text.match(/^(.+?)דירות/);
+        if (nameMatch) {
+          projectData.project_name = nameMatch[1].trim();
+        }
 
-          // Room range: "דירות 5-3 חד'"
-          if (line.includes('דירות') && line.includes('חד\'')) {
-            const roomMatch = line.match(/(\d+)-(\d+)\s*חד/);
-            if (roomMatch) {
-              projectData.room_range = `${roomMatch[1]}-${roomMatch[2]}`;
-            }
-          }
-
-          // Floors: "X קומות"
-          if (line.includes('קומות') || line.includes('קומה')) {
-            const floorMatch = line.match(/(\d+)\s*קומ/);
-            if (floorMatch) {
-              projectData.total_floors = parseInt(floorMatch[1]);
-            }
-          }
-
-          // Price: "החל מ - ‏X,XXX,XXX ‏₪"
-          if (line.includes('החל מ')) {
-            const priceMatch = line.match(/(\d[\d,]*)\s*₪/);
-            if (priceMatch) {
-              projectData.starting_price = parseInt(priceMatch[1].replace(/,/g, ''));
-            }
-          }
-
-          // Location/Address: contains comma and city name
-          if (line.includes(',') && (line.includes('חיפה') || line.includes('נשר') || line.includes('נהריה'))) {
-            projectData.project_location = line;
+        // Extract room range: "דירות 5 חד׳" or "דירות 5-3 חד׳"
+        const roomMatch = text.match(/דירות\s+(\d+)(?:-(\d+))?\s*חד/);
+        if (roomMatch) {
+          if (roomMatch[2]) {
+            // Range format: "5-3" -> reverse to "3-5"
+            const num1 = parseInt(roomMatch[1]);
+            const num2 = parseInt(roomMatch[2]);
+            projectData.room_range = `${Math.min(num1, num2)}-${Math.max(num1, num2)}`;
+          } else {
+            // Single number
+            projectData.room_range = roomMatch[1];
           }
         }
 
-        // Extract distance if in nearby text (might be in parent element)
-        const parentText = link.parentElement?.textContent || '';
-        const distanceMatch = parentText.match(/(\d+\.?\d*)\s*(מטר|ק״מ)/);
-        if (distanceMatch) {
-          const value = parseFloat(distanceMatch[1]);
-          const unit = distanceMatch[2];
-          projectData.distance_meters = unit.includes('ק״מ')
-            ? Math.round(value * 1000)
-            : Math.round(value);
+        // Extract total floors: "X קומות"
+        const floorMatch = text.match(/(\d+)\s*קומות/);
+        if (floorMatch) {
+          projectData.total_floors = parseInt(floorMatch[1]);
         }
 
-        // Only add if we have at least name and some details
+        // Extract starting price: "החל מ - ‏3,350,000 ‏₪"
+        const priceMatch = text.match(/החל\s+מ\s*-?\s*[^\d]*([\d,]+)\s*₪/);
+        if (priceMatch) {
+          projectData.starting_price = parseInt(priceMatch[1].replace(/,/g, ''));
+        }
+
+        // Extract location (address with comma and city)
+        // Look for pattern: "address, city" at the end
+        const locationMatch = text.match(/([^₪\n]+,\s*(?:חיפה|נשר|נהריה|קרית[^,]+|עכו))\s*$/);
+        if (locationMatch) {
+          projectData.project_location = locationMatch[1].trim();
+        }
+
+        // Only add if we have at least project name
         if (projectData.project_name && projectData.project_name.length > 3) {
+          // Clean up project name - remove "פרויקט חדש" prefix if present
+          projectData.project_name = projectData.project_name.replace(/^פרויקט\s+חדש\s*/i, '');
+
           console.log(`[constructionExtractor] Adding project: ${projectData.project_name}`);
           results.push(projectData);
         }

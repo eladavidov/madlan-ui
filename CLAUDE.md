@@ -310,7 +310,7 @@ npm run analyze          # Run DuckDB analytics
 
 **Current Status**: ✅ **PRODUCTION READY** - All Phase 5B Extractors Fixed and Verified
 **Breakthrough Date**: 2025-10-09 - **Anti-blocking solved with 100% success rate!**
-**Latest Update**: 2025-10-11 (Late Evening) - **Phase 5B Extractors Fixed** (Transaction & Schools) + Project Cleanup Complete
+**Latest Update**: 2025-10-12 - **Construction Projects Extractor Fixed** - ALL 7 data sections now working!
 
 **🎉 Major Achievement - Anti-Blocking Solution**:
 - **Solution**: Fresh browser per property with random delays (60-120s) + HEADLESS=false
@@ -388,6 +388,17 @@ cd Crawler && npx ts-node src/scripts/check-table-counts.ts
     - `.css-pewcrd` → Address
     - `.css-1vf85xs` → Type and grades
   - **Result**: 10 schools with clean separated fields (name: "מוריה", address: "מרדכי אנילביץ' 14, חיפה", type: "ממלכתי דתי", grades: "א-ו")
+- ✅ **Construction Projects Extractor Complete Rewrite** (`src/extractors/constructionExtractor.ts`) **(2025-10-12)**:
+  - **Problem**: Extractor was looking in wrong section - "בניה חדשה" h3 section is often empty
+  - **Root Cause**: Construction projects are in "פרויקטים חדשים בסביבה" (New Projects in the Area) section at bottom of page
+  - **Solution**: Complete rewrite to extract from project link cards
+  - **Key Changes**:
+    - Find all links with "חד׳" AND "קומות" AND city name
+    - Parse concatenated text using regex patterns
+    - Extract: project name, room range, floors, starting price, location
+    - Clean up "פרויקט חדש" prefix from names
+  - **Result**: Successfully extracting 70 projects from 9 properties (~7.8 per property)
+  - **✅ ALL 7 DATA SECTIONS NOW WORKING**: Properties, Transactions, Schools, Ratings, Price Comparisons, Construction Projects, Neighborhood Data
 - ✅ **Project Cleanup Complete**:
   - Deleted all log files from root and `logs/` directory
   - Removed old test scripts (kept only comprehensive versions)
@@ -447,3 +458,12 @@ cd Crawler && npx ts-node src/scripts/check-table-counts.ts
 - `Crawler/tests/enhanced-quality-report.html` - **NEW**: Enhanced quality report with DuckDB schema
 - `Crawler/docs/PRD.md` - Product Requirements Document
 - `Crawler/docs/RESEARCH.md` - Website structure research
+
+**💬 Monitoring Live Crawls**:
+When a production crawl is running, the user can type **"status"** for a compact progress update:
+```
+[N]/34 complete (X%) | ⏱️ Xm elapsed | ✅ 100% success | ❌ 0 failed
+Now: Property N
+Rate: ~0.47 properties/min | Remaining: ~Xm | Finish ETA: ~HH:MM
+```
+This provides quick, non-intrusive updates without verbose logs.

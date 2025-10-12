@@ -15,17 +15,12 @@ export async function extractTransactionHistory(
   propertyId: string
 ): Promise<TransactionHistoryInput[]> {
   try {
-    // Extract transaction data - section is already expanded by default
     console.log('[transactionExtractor] Extracting transaction history...');
 
     const transactions = await page.evaluate((propId) => {
       const results: any[] = [];
 
-      // Find all transaction address links - they're inside the transaction history section
-      // Pattern: Links that contain street names/addresses in Hebrew
-      const allLinks = Array.from(document.querySelectorAll('a'));
-
-      // Find the transaction history heading first to ensure we're in the right section
+      // Find transaction history section by heading
       const headings = Array.from(document.querySelectorAll('h3'));
       const transactionHeading = headings.find(h => h.textContent?.includes('היסטוריית עסקאות'));
 
@@ -34,117 +29,80 @@ export async function extractTransactionHistory(
         return results;
       }
 
-      // Get the parent container of the transaction section
-      let transactionSection = transactionHeading.parentElement;
-      while (transactionSection && transactionSection.tagName !== 'BODY') {
-        // Look for the section that contains both the heading and transaction rows
-        const sectionText = transactionSection.textContent || '';
-        if (sectionText.includes('ת. עסקה') && sectionText.includes('מחיר ב₪')) {
-          break;
-        }
-        transactionSection = transactionSection.parentElement;
-      }
+      // Find the table rows - they're in div[data-auto="table-row-N"] elements
+      const tableRows = Array.from(document.querySelectorAll('div[data-auto^="table-row-"]'));
+      console.log(`[transactionExtractor] Found ${tableRows.length} table rows`);
 
-      if (!transactionSection) {
-        console.log('[transactionExtractor] Transaction section container not found');
-        return results;
-      }
+      for (const row of tableRows) {
+        const cells = Array.from(row.querySelectorAll('.table-cell'));
+        if (cells.length < 8) continue; // Need at least 8 cells for valid data
 
-      // Now find all links within this section that look like addresses
-      const sectionLinks = Array.from(transactionSection.querySelectorAll('a'));
-
-      for (const link of sectionLinks) {
-        const linkText = link.textContent?.trim() || '';
-
-        // Skip empty links or very short ones
-        if (linkText.length < 2) continue;
-
-        // Skip if it's a pagination or filter link
-        if (linkText.match(/^\d+$/) || linkText.includes('סינון') || linkText.includes('בסביבה')) {
-          continue;
-        }
-
-        // Skip "related listings" section
-        if (linkText.includes('מודעות') || linkText.includes('פרויקט')) {
-          continue;
-        }
-
-        // Check if parent contains transaction data markers
-        let row = link.parentElement;
-        let rowText = '';
-
-        // Walk up to find the row container
-        for (let i = 0; i < 5 && row; i++) {
-          rowText = row.textContent || '';
-          // Transaction rows have: address, bullet (•), size (מ״ר), bullet, price/sqm, bullet, rooms (חד'), bullet, floor (קומה), bullet, year (ב-)
-          if (rowText.includes('מ״ר') && rowText.includes('₪') && rowText.includes('•')) {
-            break;
-          }
-          row = row.parentElement;
-        }
-
-        if (!row || !rowText) continue;
-
-        // Parse the row data
         const rowData: any = {
-          property_id: propId,
-          transaction_address: linkText
+          property_id: propId
         };
 
-        // Split by bullet points to get segments
-        const segments = rowText.split('•').map(s => s.trim());
+        // Cell 0: Address (link text)
+        const addressLink = cells[0]?.querySelector('a');
+        if (addressLink) {
+          rowData.transaction_address = addressLink.textContent?.trim() || '';
+        }
 
-        for (const segment of segments) {
-          // Date: D.M.YYYY or DD.MM.YYYY format
-          const dateMatch = segment.match(/(\d{1,2})\.(\d{1,2})\.(\d{4})/);
-          if (dateMatch) {
-            const [, day, month, year] = dateMatch;
-            rowData.transaction_date = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+        // Cell 2: Transaction date (format: D.M.YYYY or DD.MM.YYYY)
+        const dateText = cells[2]?.textContent?.trim() || '';
+        const dateMatch = dateText.match(/(\d{1,2})\.(\d{1,2})\.(\d{4})/);
+        if (dateMatch) {
+          const [, day, month, year] = dateMatch;
+          rowData.transaction_date = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+        }
+
+        // Cell 3: Price (format: "1.2 מ' ₪" or "600 א' ₪")
+        const priceText = cells[3]?.textContent?.trim() || '';
+        const priceMillionsMatch = priceText.match(/([\d.]+)\s*מ['׳]/);
+        const priceThousandsMatch = priceText.match(/([\d.]+)\s*א['׳]/);
+
+        if (priceMillionsMatch) {
+          rowData.transaction_price = Math.round(parseFloat(priceMillionsMatch[1]) * 1000000);
+        } else if (priceThousandsMatch) {
+          rowData.transaction_price = Math.round(parseFloat(priceThousandsMatch[1]) * 1000);
+        }
+
+        // Cell 4: Size/Area (just the number)
+        const sizeText = cells[4]?.textContent?.trim() || '';
+        const size = parseInt(sizeText.replace(/[^\d]/g, ''));
+        if (!isNaN(size) && size > 0) {
+          rowData.transaction_size = size;
+        }
+
+        // Cell 5: Price per sqm (format: "‏13,750 ‏₪")
+        const priceSqmText = cells[5]?.textContent?.trim() || '';
+        const priceSqmMatch = priceSqmText.match(/([\d,]+)/);
+        if (priceSqmMatch) {
+          rowData.transaction_price_per_sqm = parseInt(priceSqmMatch[1].replace(/,/g, ''));
+        }
+
+        // Cell 6: Rooms (just the number)
+        const roomsText = cells[6]?.textContent?.trim() || '';
+        const rooms = parseInt(roomsText.replace(/[^\d]/g, ''));
+        if (!isNaN(rooms) && rooms > 0) {
+          rowData.transaction_rooms = rooms;
+        }
+
+        // Cell 7: Floor (number or "קרקע")
+        const floorText = cells[7]?.textContent?.trim() || '';
+        if (floorText.includes('קרקע')) {
+          rowData.transaction_floor = 0;
+        } else {
+          const floor = parseInt(floorText.replace(/[^\d]/g, ''));
+          if (!isNaN(floor)) {
+            rowData.transaction_floor = floor;
           }
+        }
 
-          // Size: "120 מ״ר" or just number before מ״ר
-          const sizeMatch = segment.match(/(\d+)\s*מ״ר/);
-          if (sizeMatch) {
-            rowData.transaction_size = parseInt(sizeMatch[1]);
-          }
-
-          // Price per sqm: "14,166 ₪ למ״ר" or "‏14,166 ‏₪"
-          const pricePerSqmMatch = segment.match(/([\d,]+)\s*₪\s*למ״ר/);
-          if (pricePerSqmMatch) {
-            rowData.transaction_price_per_sqm = parseInt(pricePerSqmMatch[1].replace(/,/g, ''));
-          }
-
-          // Rooms: "3 חד'"
-          const roomsMatch = segment.match(/(\d+)\s*חד['׳]/);
-          if (roomsMatch) {
-            rowData.transaction_rooms = parseInt(roomsMatch[1]);
-          }
-
-          // Floor: "קומה 2" or "קרקע"
-          if (segment.includes('קרקע')) {
-            rowData.transaction_floor = 0;
-          } else {
-            const floorMatch = segment.match(/קומה\s+(\d+)/);
-            if (floorMatch) {
-              rowData.transaction_floor = parseInt(floorMatch[1]);
-            }
-          }
-
-          // Year built: "נבנה ב-1920"
-          const yearMatch = segment.match(/נבנה ב-(\d{4})/);
-          if (yearMatch) {
-            rowData.year_built = parseInt(yearMatch[1]);
-          }
-
-          // Price: "1.7 מ' ₪" or "600 א' ₪"
-          const priceMillionsMatch = segment.match(/([\d.]+)\s*מ['׳]\s*₪/);
-          const priceThousandsMatch = segment.match(/([\d.]+)\s*א['׳]\s*₪/);
-
-          if (priceMillionsMatch) {
-            rowData.transaction_price = Math.round(parseFloat(priceMillionsMatch[1]) * 1000000);
-          } else if (priceThousandsMatch) {
-            rowData.transaction_price = Math.round(parseFloat(priceThousandsMatch[1]) * 1000);
-          }
+        // Cell 8: Year built (just the number)
+        const yearText = cells[8]?.textContent?.trim() || '';
+        const year = parseInt(yearText.replace(/[^\d]/g, ''));
+        if (!isNaN(year) && year > 1800 && year < 2100) {
+          rowData.year_built = year;
         }
 
         // Calculate price per sqm if we have price and size but no price_per_sqm
@@ -159,12 +117,11 @@ export async function extractTransactionHistory(
         }
       }
 
-      console.log(`[transactionExtractor] Found ${results.length} transactions in section`);
+      console.log(`[transactionExtractor] Final result: ${results.length} transactions`);
       return results.slice(0, 20); // Limit to first 20
     }, propertyId);
 
-    console.log(`[transactionExtractor] Evaluated, found ${transactions.length} transactions`);
-    console.log(`[transactionExtractor] Final result: ${transactions.length} transactions`);
+    console.log(`[transactionExtractor] Extracted ${transactions.length} transactions`);
     if (transactions.length > 0) {
       console.log(`[transactionExtractor] Sample:`, JSON.stringify(transactions[0]));
     }
