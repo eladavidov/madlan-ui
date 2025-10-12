@@ -40,7 +40,6 @@ CREATE TABLE IF NOT EXISTS properties (
   -- Property Type & Details
   property_type VARCHAR,
   description TEXT,
-  neighborhood_description TEXT,
 
   -- Amenities (Boolean flags)
   has_parking BOOLEAN DEFAULT FALSE,
@@ -97,7 +96,6 @@ COMMENT ON COLUMN properties.latitude IS 'Geographic latitude coordinate for map
 COMMENT ON COLUMN properties.longitude IS 'Geographic longitude coordinate for map location';
 COMMENT ON COLUMN properties.property_type IS 'Type of property in Hebrew (דירה, פנטהאוז, דירת גן, דופלקס, etc.)';
 COMMENT ON COLUMN properties.description IS 'Full property description text from listing (Hebrew)';
-COMMENT ON COLUMN properties.neighborhood_description IS 'Description of life in the neighborhood (החיים בשכונה)';
 COMMENT ON COLUMN properties.has_parking IS 'TRUE if property has parking space(s)';
 COMMENT ON COLUMN properties.parking_spaces IS 'Number of parking spaces available';
 COMMENT ON COLUMN properties.has_elevator IS 'TRUE if building has elevator (מעלית)';

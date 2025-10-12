@@ -13,9 +13,14 @@ export function isSearchPage(url: string): boolean {
 
 /**
  * Determine if URL is a property detail page
+ * Excludes construction company project pages (/projects/)
  */
 export function isPropertyPage(url: string): boolean {
   // Property pages: https://www.madlan.co.il/listings/{id} or /bulletin/{id}
+  // Exclude construction company projects: https://www.madlan.co.il/projects/{id}
+  if (/madlan\.co\.il\/projects\//i.test(url)) {
+    return false; // Skip construction company properties
+  }
   return /madlan\.co\.il\/(listings|bulletin)\//i.test(url);
 }
 

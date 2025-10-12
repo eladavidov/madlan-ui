@@ -26,9 +26,12 @@
         .column-type { color: white; background: #7f8c8d; font-size: 11px; font-family: 'Courier New', monospace; padding: 3px 8px; border-radius: 3px; display: inline-block; }
         .nullable-yes { color: #856404; background: #fff3cd; font-size: 11px; padding: 3px 8px; border-radius: 3px; display: inline-block; }
         .nullable-no { color: #721c24; background: #f8d7da; font-size: 11px; padding: 3px 8px; border-radius: 3px; display: inline-block; }
-        .sample-data { background: #fff9e6; padding: 8px; border-radius: 3px; font-family: 'Courier New', monospace; font-size: 12px; max-width: 400px; word-wrap: break-word; }
+        .sample-data { background: #fff9e6; padding: 8px; border-radius: 3px; font-family: 'Courier New', monospace; font-size: 12px; max-width: 400px; word-wrap: break-word; line-height: 1.6; }
         .null-value { color: #999; font-style: italic; }
         .no-data-warning { color: #e74c3c; font-style: italic; background: #fee; padding: 10px; border-radius: 4px; margin: 10px 0; }
+        .completeness-high { color: white; background: #28a745; font-size: 12px; padding: 4px 10px; border-radius: 3px; display: inline-block; font-weight: 600; }
+        .completeness-medium { color: white; background: #ffc107; font-size: 12px; padding: 4px 10px; border-radius: 3px; display: inline-block; font-weight: 600; }
+        .completeness-low { color: white; background: #dc3545; font-size: 12px; padding: 4px 10px; border-radius: 3px; display: inline-block; font-weight: 600; }
         .metadata { color: #7f8c8d; font-size: 13px; margin-top: 40px; padding-top: 30px; border-top: 2px solid #ddd; }
         .metadata h3 { color: #34495e; margin-top: 25px; }
         .metadata p { margin: 8px 0; line-height: 1.8; }
@@ -41,7 +44,7 @@
         <div class="info">
             <p><strong>Database:</strong> DuckDB (properties.duckdb)</p>
             <p><strong>Target:</strong> Haifa Properties for Sale (~3,600 available)</p>
-            <p><strong>Generated:</strong> 2025-10-11T12:33:35.459Z</p>
+            <p><strong>Generated:</strong> 2025-10-12T11:07:38.560Z</p>
             <p><strong>Search URL:</strong> https://www.madlan.co.il/for-sale/%D7%97%D7%99%D7%A4%D7%94-%D7%99%D7%A9%D7%A8%D7%90%D7%9C?tracking_search_source=new_search&marketplace=residential</p>
         </div>
 
@@ -51,29 +54,30 @@
                 <span class="stat-label">Total Tables</span>
             </div>
             <div class="stat-item">
-                <span class="stat-value">126</span>
+                <span class="stat-value">125</span>
                 <span class="stat-label">Total Columns</span>
             </div>
             <div class="stat-item">
-                <span class="stat-value">137</span>
+                <span class="stat-value">61</span>
                 <span class="stat-label">Total Rows</span>
             </div>
             <div class="stat-item">
-                <span class="stat-value">4/9</span>
+                <span class="stat-value">8/9</span>
                 <span class="stat-label">Tables with Data</span>
             </div>
         </div>
 
         <h2>🏠 properties</h2>
         <div class="table-comment">Main table storing comprehensive property listings data from Madlan.co.il including basic info, amenities, location, and pricing details</div>
-<div class="table-count">📊 Row Count: <strong>34</strong> </div>
+<div class="table-count">📊 Row Count: <strong>2</strong> </div>
         <table>
             <tr>
                 <th style="width: 180px">Column Name</th>
-                <th style="width: 450px">Description</th>
-                <th style="width: 120px">Type</th>
-                <th style="width: 100px">Nullable</th>
-                <th>Sample Data (first non-null value found)</th>
+                <th style="width: 380px">Description</th>
+                <th style="width: 110px">Type</th>
+                <th style="width: 90px">Nullable</th>
+                <th style="width: 100px">Completeness</th>
+                <th>Sample Data (diverse examples)</th>
             </tr>
 
             <tr>
@@ -81,7 +85,8 @@
                 <td>Unique property identifier from Madlan URL</td>
                 <td><span class="column-type">VARCHAR</span></td>
                 <td><span class="nullable-no">NOT NULL</span></td>
-                <td class="sample-data">5BzpHqFwgd7</td>
+                <td style="text-align: center; font-weight: 600;"><span class="completeness-high">100%</span></td>
+                <td class="sample-data">PbZGJU4TlN1<br>cyFEz0PGcws</td>
             </tr>
 
             <tr>
@@ -89,7 +94,8 @@
                 <td>Full Madlan property page URL</td>
                 <td><span class="column-type">VARCHAR</span></td>
                 <td><span class="nullable-no">NOT NULL</span></td>
-                <td class="sample-data">https://www.madlan.co.il/listings/5BzpHqFwgd7</td>
+                <td style="text-align: center; font-weight: 600;"><span class="completeness-high">100%</span></td>
+                <td class="sample-data">https://www.madlan.co.il/listings/PbZGJU4TlN1<br>https://www.madlan.co.il/listings/cyFEz0PGcws</td>
             </tr>
 
             <tr>
@@ -97,6 +103,7 @@
                 <td>Column: source_url</td>
                 <td><span class="column-type">VARCHAR</span></td>
                 <td><span class="nullable-yes">NULL</span></td>
+                <td style="text-align: center; font-weight: 600;"><span class="completeness-low">0%</span></td>
                 <td class="sample-data"><span class="null-value">No data</span></td>
             </tr>
 
@@ -105,7 +112,8 @@
                 <td>Property price in Israeli Shekels (₪)</td>
                 <td><span class="column-type">INTEGER</span></td>
                 <td><span class="nullable-yes">NULL</span></td>
-                <td class="sample-data">1700000</td>
+                <td style="text-align: center; font-weight: 600;"><span class="completeness-high">100%</span></td>
+                <td class="sample-data">3890000<br>3650000</td>
             </tr>
 
             <tr>
@@ -113,7 +121,8 @@
                 <td>Number of rooms (including half rooms like 3.5, 4.5)</td>
                 <td><span class="column-type">DECIMAL(3,1)</span></td>
                 <td><span class="nullable-yes">NULL</span></td>
-                <td class="sample-data">3</td>
+                <td style="text-align: center; font-weight: 600;"><span class="completeness-high">100%</span></td>
+                <td class="sample-data">4<br>5</td>
             </tr>
 
             <tr>
@@ -121,7 +130,8 @@
                 <td>Property size in square meters (m²)</td>
                 <td><span class="column-type">DECIMAL(6,2)</span></td>
                 <td><span class="nullable-yes">NULL</span></td>
-                <td class="sample-data">120</td>
+                <td style="text-align: center; font-weight: 600;"><span class="completeness-high">100%</span></td>
+                <td class="sample-data">134<br>200</td>
             </tr>
 
             <tr>
@@ -129,7 +139,8 @@
                 <td>Floor number (negative for basement)</td>
                 <td><span class="column-type">INTEGER</span></td>
                 <td><span class="nullable-yes">NULL</span></td>
-                <td class="sample-data">2</td>
+                <td style="text-align: center; font-weight: 600;"><span class="completeness-medium">50%</span></td>
+                <td class="sample-data">5</td>
             </tr>
 
             <tr>
@@ -137,7 +148,8 @@
                 <td>Total floors in building</td>
                 <td><span class="column-type">INTEGER</span></td>
                 <td><span class="nullable-yes">NULL</span></td>
-                <td class="sample-data">3</td>
+                <td style="text-align: center; font-weight: 600;"><span class="completeness-medium">50%</span></td>
+                <td class="sample-data">6</td>
             </tr>
 
             <tr>
@@ -145,7 +157,8 @@
                 <td>Price per square meter (₪/m²)</td>
                 <td><span class="column-type">INTEGER</span></td>
                 <td><span class="nullable-yes">NULL</span></td>
-                <td class="sample-data"><span class="null-value">No data</span></td>
+                <td style="text-align: center; font-weight: 600;"><span class="completeness-high">100%</span></td>
+                <td class="sample-data">27239<br>19450</td>
             </tr>
 
             <tr>
@@ -153,7 +166,8 @@
                 <td>Expected rental yield percentage</td>
                 <td><span class="column-type">DECIMAL(5,2)</span></td>
                 <td><span class="nullable-yes">NULL</span></td>
-                <td class="sample-data"><span class="null-value">No data</span></td>
+                <td style="text-align: center; font-weight: 600;"><span class="completeness-high">100%</span></td>
+                <td class="sample-data">3.06<br>2.05</td>
             </tr>
 
             <tr>
@@ -161,7 +175,8 @@
                 <td>Street address in Hebrew</td>
                 <td><span class="column-type">VARCHAR</span></td>
                 <td><span class="nullable-yes">NULL</span></td>
-                <td class="sample-data">וואדי 10</td>
+                <td style="text-align: center; font-weight: 600;"><span class="completeness-high">100%</span></td>
+                <td class="sample-data">שדרות הצבי 34<br>ורדיה 59</td>
             </tr>
 
             <tr>
@@ -169,7 +184,8 @@
                 <td>Neighborhood name in Hebrew (e.g., אחוזה, כרמל)</td>
                 <td><span class="column-type">VARCHAR</span></td>
                 <td><span class="nullable-yes">NULL</span></td>
-                <td class="sample-data">ואדי ניסנאס</td>
+                <td style="text-align: center; font-weight: 600;"><span class="completeness-high">100%</span></td>
+                <td class="sample-data">ורדיה<br>כרמל ותיק</td>
             </tr>
 
             <tr>
@@ -177,6 +193,7 @@
                 <td>City name in Hebrew (חיפה)</td>
                 <td><span class="column-type">VARCHAR</span></td>
                 <td><span class="nullable-no">NOT NULL</span></td>
+                <td style="text-align: center; font-weight: 600;"><span class="completeness-high">100%</span></td>
                 <td class="sample-data">חיפה</td>
             </tr>
 
@@ -185,7 +202,8 @@
                 <td>Property latitude coordinate</td>
                 <td><span class="column-type">DECIMAL(10,8)</span></td>
                 <td><span class="nullable-yes">NULL</span></td>
-                <td class="sample-data"><span class="null-value">No data</span></td>
+                <td style="text-align: center; font-weight: 600;"><span class="completeness-high">100%</span></td>
+                <td class="sample-data">32.80485226<br>32.79417634</td>
             </tr>
 
             <tr>
@@ -193,7 +211,8 @@
                 <td>Property longitude coordinate</td>
                 <td><span class="column-type">DECIMAL(11,8)</span></td>
                 <td><span class="nullable-yes">NULL</span></td>
-                <td class="sample-data"><span class="null-value">No data</span></td>
+                <td style="text-align: center; font-weight: 600;"><span class="completeness-high">100%</span></td>
+                <td class="sample-data">35.0004449<br>34.97818614</td>
             </tr>
 
             <tr>
@@ -201,6 +220,7 @@
                 <td>Type: דירה, פנטהאוז, דירת גן, דופלקס</td>
                 <td><span class="column-type">VARCHAR</span></td>
                 <td><span class="nullable-yes">NULL</span></td>
+                <td style="text-align: center; font-weight: 600;"><span class="completeness-high">100%</span></td>
                 <td class="sample-data">מד מדלן: בקרוב לנכס זה</td>
             </tr>
 
@@ -209,18 +229,12 @@
                 <td>Column: description</td>
                 <td><span class="column-type">VARCHAR</span></td>
                 <td><span class="nullable-yes">NULL</span></td>
-                <td class="sample-data">דירת בוטיק נדירה למכירה בלב ההיסטורי של ואדי ניסנאס, חיפה. 
-בניין אבן לשימור מלפני כ-100 שנה. 
-3 חדרים, כ-110 מ"ר.
-תקרות...</td>
-            </tr>
-
-            <tr>
-                <td><span class="column-name">neighborhood_description</span></td>
-                <td>Text description of neighborhood life</td>
-                <td><span class="column-type">VARCHAR</span></td>
-                <td><span class="nullable-yes">NULL</span></td>
-                <td class="sample-data"><span class="null-value">No data</span></td>
+                <td style="text-align: center; font-weight: 600;"><span class="completeness-high">100%</span></td>
+                <td class="sample-data">למכירה: 
+בלב שכונת ורדיה היוקרתית , במקום הכי שקט ואינטימי. 
+מוצעת למכירה דירת ק...<br>ללא תיווך!
+דירה חדשה בת שנתיים ברחוב שדרות הצבי המבוקש בחיפה
+120 מ״ר בנוי ועוד 1...</td>
             </tr>
 
             <tr>
@@ -228,6 +242,7 @@
                 <td>TRUE if property has parking space(s)</td>
                 <td><span class="column-type">BOOLEAN</span></td>
                 <td><span class="nullable-yes">NULL</span></td>
+                <td style="text-align: center; font-weight: 600;"><span class="completeness-high">100%</span></td>
                 <td class="sample-data">TRUE</td>
             </tr>
 
@@ -236,6 +251,7 @@
                 <td>Column: parking_spaces</td>
                 <td><span class="column-type">INTEGER</span></td>
                 <td><span class="nullable-yes">NULL</span></td>
+                <td style="text-align: center; font-weight: 600;"><span class="completeness-low">0%</span></td>
                 <td class="sample-data"><span class="null-value">No data</span></td>
             </tr>
 
@@ -244,6 +260,7 @@
                 <td>TRUE if building has elevator (מעלית)</td>
                 <td><span class="column-type">BOOLEAN</span></td>
                 <td><span class="nullable-yes">NULL</span></td>
+                <td style="text-align: center; font-weight: 600;"><span class="completeness-high">100%</span></td>
                 <td class="sample-data">TRUE</td>
             </tr>
 
@@ -252,6 +269,7 @@
                 <td>TRUE if property has balcony (מרפסת)</td>
                 <td><span class="column-type">BOOLEAN</span></td>
                 <td><span class="nullable-yes">NULL</span></td>
+                <td style="text-align: center; font-weight: 600;"><span class="completeness-high">100%</span></td>
                 <td class="sample-data">TRUE</td>
             </tr>
 
@@ -260,6 +278,7 @@
                 <td>Column: balcony_size</td>
                 <td><span class="column-type">DECIMAL(5,2)</span></td>
                 <td><span class="nullable-yes">NULL</span></td>
+                <td style="text-align: center; font-weight: 600;"><span class="completeness-low">0%</span></td>
                 <td class="sample-data"><span class="null-value">No data</span></td>
             </tr>
 
@@ -268,6 +287,7 @@
                 <td>TRUE if has air conditioning (מזגן)</td>
                 <td><span class="column-type">BOOLEAN</span></td>
                 <td><span class="nullable-yes">NULL</span></td>
+                <td style="text-align: center; font-weight: 600;"><span class="completeness-high">100%</span></td>
                 <td class="sample-data">TRUE</td>
             </tr>
 
@@ -276,6 +296,7 @@
                 <td>TRUE if has security door (דלת פלדה)</td>
                 <td><span class="column-type">BOOLEAN</span></td>
                 <td><span class="nullable-yes">NULL</span></td>
+                <td style="text-align: center; font-weight: 600;"><span class="completeness-high">100%</span></td>
                 <td class="sample-data">FALSE</td>
             </tr>
 
@@ -284,6 +305,7 @@
                 <td>TRUE if has window bars (סורגים)</td>
                 <td><span class="column-type">BOOLEAN</span></td>
                 <td><span class="nullable-yes">NULL</span></td>
+                <td style="text-align: center; font-weight: 600;"><span class="completeness-high">100%</span></td>
                 <td class="sample-data">TRUE</td>
             </tr>
 
@@ -292,6 +314,7 @@
                 <td>TRUE if has storage room (מחסן)</td>
                 <td><span class="column-type">BOOLEAN</span></td>
                 <td><span class="nullable-yes">NULL</span></td>
+                <td style="text-align: center; font-weight: 600;"><span class="completeness-high">100%</span></td>
                 <td class="sample-data">TRUE</td>
             </tr>
 
@@ -300,6 +323,7 @@
                 <td>Column: has_shelter</td>
                 <td><span class="column-type">BOOLEAN</span></td>
                 <td><span class="nullable-yes">NULL</span></td>
+                <td style="text-align: center; font-weight: 600;"><span class="completeness-high">100%</span></td>
                 <td class="sample-data">TRUE</td>
             </tr>
 
@@ -308,6 +332,7 @@
                 <td>TRUE if accessible for disabled (נגיש)</td>
                 <td><span class="column-type">BOOLEAN</span></td>
                 <td><span class="nullable-yes">NULL</span></td>
+                <td style="text-align: center; font-weight: 600;"><span class="completeness-high">100%</span></td>
                 <td class="sample-data">TRUE</td>
             </tr>
 
@@ -316,6 +341,7 @@
                 <td>TRUE if recently renovated (משופץ)</td>
                 <td><span class="column-type">BOOLEAN</span></td>
                 <td><span class="nullable-yes">NULL</span></td>
+                <td style="text-align: center; font-weight: 600;"><span class="completeness-high">100%</span></td>
                 <td class="sample-data">FALSE</td>
             </tr>
 
@@ -324,6 +350,7 @@
                 <td>TRUE if furnished (מרוהט)</td>
                 <td><span class="column-type">BOOLEAN</span></td>
                 <td><span class="nullable-yes">NULL</span></td>
+                <td style="text-align: center; font-weight: 600;"><span class="completeness-high">100%</span></td>
                 <td class="sample-data">FALSE</td>
             </tr>
 
@@ -332,7 +359,8 @@
                 <td>Column: entry_date</td>
                 <td><span class="column-type">VARCHAR</span></td>
                 <td><span class="nullable-yes">NULL</span></td>
-                <td class="sample-data">‏14,167 ‏₪</td>
+                <td style="text-align: center; font-weight: 600;"><span class="completeness-high">100%</span></td>
+                <td class="sample-data">מיידי</td>
             </tr>
 
             <tr>
@@ -340,7 +368,8 @@
                 <td>Column: listing_date</td>
                 <td><span class="column-type">DATE</span></td>
                 <td><span class="nullable-yes">NULL</span></td>
-                <td class="sample-data"><span class="null-value">No data</span></td>
+                <td style="text-align: center; font-weight: 600;"><span class="completeness-high">100%</span></td>
+                <td class="sample-data">2025-10-07<br>2025-10-12</td>
             </tr>
 
             <tr>
@@ -348,6 +377,7 @@
                 <td>Column: last_updated</td>
                 <td><span class="column-type">DATE</span></td>
                 <td><span class="nullable-yes">NULL</span></td>
+                <td style="text-align: center; font-weight: 600;"><span class="completeness-low">0%</span></td>
                 <td class="sample-data"><span class="null-value">No data</span></td>
             </tr>
 
@@ -356,7 +386,8 @@
                 <td>Column: contact_name</td>
                 <td><span class="column-type">VARCHAR</span></td>
                 <td><span class="nullable-yes">NULL</span></td>
-                <td class="sample-data">מומחה בשכונה</td>
+                <td style="text-align: center; font-weight: 600;"><span class="completeness-medium">50%</span></td>
+                <td class="sample-data">ליאור כהן</td>
             </tr>
 
             <tr>
@@ -364,7 +395,8 @@
                 <td>Column: contact_phone</td>
                 <td><span class="column-type">VARCHAR</span></td>
                 <td><span class="nullable-yes">NULL</span></td>
-                <td class="sample-data">הציגו מספר טלפון</td>
+                <td style="text-align: center; font-weight: 600;"><span class="completeness-high">100%</span></td>
+                <td class="sample-data">073-8056131<br>073-8063321</td>
             </tr>
 
             <tr>
@@ -372,7 +404,8 @@
                 <td>Column: contact_agency</td>
                 <td><span class="column-type">VARCHAR</span></td>
                 <td><span class="nullable-yes">NULL</span></td>
-                <td class="sample-data">דירות לקניהראשידירות למכירהפרויקטים חדשיםחיפושים פופולריים · דירות למכירהדירות למכירה בחיפהדירות למכירה בירושליםדירות למ...</td>
+                <td style="text-align: center; font-weight: 600;"><span class="completeness-low">0%</span></td>
+                <td class="sample-data"><span class="null-value">No data</span></td>
             </tr>
 
             <tr>
@@ -380,7 +413,8 @@
                 <td>Timestamp when first crawled</td>
                 <td><span class="column-type">TIMESTAMP</span></td>
                 <td><span class="nullable-yes">NULL</span></td>
-                <td class="sample-data">2025-10-11T11:21:55.553Z</td>
+                <td style="text-align: center; font-weight: 600;"><span class="completeness-high">100%</span></td>
+                <td class="sample-data">2025-10-12<br>2025-10-12</td>
             </tr>
 
             <tr>
@@ -388,7 +422,8 @@
                 <td>Timestamp when last crawled</td>
                 <td><span class="column-type">TIMESTAMP</span></td>
                 <td><span class="nullable-yes">NULL</span></td>
-                <td class="sample-data">2025-10-11T11:21:55.553Z</td>
+                <td style="text-align: center; font-weight: 600;"><span class="completeness-high">100%</span></td>
+                <td class="sample-data">2025-10-12<br>2025-10-12</td>
             </tr>
 
             <tr>
@@ -396,6 +431,7 @@
                 <td>Number of times property crawled</td>
                 <td><span class="column-type">INTEGER</span></td>
                 <td><span class="nullable-no">NOT NULL</span></td>
+                <td style="text-align: center; font-weight: 600;"><span class="completeness-high">100%</span></td>
                 <td class="sample-data">1</td>
             </tr>
 
@@ -404,6 +440,7 @@
                 <td>Column: data_complete</td>
                 <td><span class="column-type">BOOLEAN</span></td>
                 <td><span class="nullable-yes">NULL</span></td>
+                <td style="text-align: center; font-weight: 600;"><span class="completeness-high">100%</span></td>
                 <td class="sample-data">TRUE</td>
             </tr>
 
@@ -412,6 +449,7 @@
                 <td>Column: has_errors</td>
                 <td><span class="column-type">BOOLEAN</span></td>
                 <td><span class="nullable-yes">NULL</span></td>
+                <td style="text-align: center; font-weight: 600;"><span class="completeness-high">100%</span></td>
                 <td class="sample-data">FALSE</td>
             </tr>
 
@@ -420,6 +458,7 @@
                 <td>Column: error_notes</td>
                 <td><span class="column-type">VARCHAR</span></td>
                 <td><span class="nullable-yes">NULL</span></td>
+                <td style="text-align: center; font-weight: 600;"><span class="completeness-low">0%</span></td>
                 <td class="sample-data"><span class="null-value">No data</span></td>
             </tr>
 
@@ -431,10 +470,11 @@
         <table>
             <tr>
                 <th style="width: 180px">Column Name</th>
-                <th style="width: 450px">Description</th>
-                <th style="width: 120px">Type</th>
-                <th style="width: 100px">Nullable</th>
-                <th>Sample Data (first non-null value found)</th>
+                <th style="width: 380px">Description</th>
+                <th style="width: 110px">Type</th>
+                <th style="width: 90px">Nullable</th>
+                <th style="width: 100px">Completeness</th>
+                <th>Sample Data (diverse examples)</th>
             </tr>
 
             <tr>
@@ -442,6 +482,7 @@
                 <td>Auto-incrementing primary key for image records</td>
                 <td><span class="column-type">INTEGER</span></td>
                 <td><span class="nullable-no">NOT NULL</span></td>
+                <td style="text-align: center; font-weight: 600;"><span class="null-value">0%</span></td>
                 <td class="sample-data"><span class="null-value">No data</span></td>
             </tr>
 
@@ -450,6 +491,7 @@
                 <td>Foreign key to properties table</td>
                 <td><span class="column-type">VARCHAR</span></td>
                 <td><span class="nullable-no">NOT NULL</span></td>
+                <td style="text-align: center; font-weight: 600;"><span class="null-value">0%</span></td>
                 <td class="sample-data"><span class="null-value">No data</span></td>
             </tr>
 
@@ -458,6 +500,7 @@
                 <td>Full URL to image on Madlan CDN</td>
                 <td><span class="column-type">VARCHAR</span></td>
                 <td><span class="nullable-no">NOT NULL</span></td>
+                <td style="text-align: center; font-weight: 600;"><span class="null-value">0%</span></td>
                 <td class="sample-data"><span class="null-value">No data</span></td>
             </tr>
 
@@ -466,6 +509,7 @@
                 <td>Order in gallery (0 = first/main image)</td>
                 <td><span class="column-type">INTEGER</span></td>
                 <td><span class="nullable-no">NOT NULL</span></td>
+                <td style="text-align: center; font-weight: 600;"><span class="null-value">0%</span></td>
                 <td class="sample-data"><span class="null-value">No data</span></td>
             </tr>
 
@@ -474,6 +518,7 @@
                 <td>TRUE if primary thumbnail image</td>
                 <td><span class="column-type">BOOLEAN</span></td>
                 <td><span class="nullable-yes">NULL</span></td>
+                <td style="text-align: center; font-weight: 600;"><span class="null-value">0%</span></td>
                 <td class="sample-data"><span class="null-value">No data</span></td>
             </tr>
 
@@ -482,6 +527,7 @@
                 <td>Column: image_type</td>
                 <td><span class="column-type">VARCHAR</span></td>
                 <td><span class="nullable-yes">NULL</span></td>
+                <td style="text-align: center; font-weight: 600;"><span class="null-value">0%</span></td>
                 <td class="sample-data"><span class="null-value">No data</span></td>
             </tr>
 
@@ -490,6 +536,7 @@
                 <td>Column: width</td>
                 <td><span class="column-type">INTEGER</span></td>
                 <td><span class="nullable-yes">NULL</span></td>
+                <td style="text-align: center; font-weight: 600;"><span class="null-value">0%</span></td>
                 <td class="sample-data"><span class="null-value">No data</span></td>
             </tr>
 
@@ -498,6 +545,7 @@
                 <td>Column: height</td>
                 <td><span class="column-type">INTEGER</span></td>
                 <td><span class="nullable-yes">NULL</span></td>
+                <td style="text-align: center; font-weight: 600;"><span class="null-value">0%</span></td>
                 <td class="sample-data"><span class="null-value">No data</span></td>
             </tr>
 
@@ -506,6 +554,7 @@
                 <td>Column: file_size</td>
                 <td><span class="column-type">INTEGER</span></td>
                 <td><span class="nullable-yes">NULL</span></td>
+                <td style="text-align: center; font-weight: 600;"><span class="null-value">0%</span></td>
                 <td class="sample-data"><span class="null-value">No data</span></td>
             </tr>
 
@@ -514,6 +563,7 @@
                 <td>TRUE if downloaded to local storage</td>
                 <td><span class="column-type">BOOLEAN</span></td>
                 <td><span class="nullable-yes">NULL</span></td>
+                <td style="text-align: center; font-weight: 600;"><span class="null-value">0%</span></td>
                 <td class="sample-data"><span class="null-value">No data</span></td>
             </tr>
 
@@ -522,6 +572,7 @@
                 <td>Relative path to downloaded file (deprecated)</td>
                 <td><span class="column-type">VARCHAR</span></td>
                 <td><span class="nullable-yes">NULL</span></td>
+                <td style="text-align: center; font-weight: 600;"><span class="null-value">0%</span></td>
                 <td class="sample-data"><span class="null-value">No data</span></td>
             </tr>
 
@@ -530,6 +581,7 @@
                 <td>Column: download_date</td>
                 <td><span class="column-type">TIMESTAMP</span></td>
                 <td><span class="nullable-yes">NULL</span></td>
+                <td style="text-align: center; font-weight: 600;"><span class="null-value">0%</span></td>
                 <td class="sample-data"><span class="null-value">No data</span></td>
             </tr>
 
@@ -538,6 +590,7 @@
                 <td>Column: download_error</td>
                 <td><span class="column-type">VARCHAR</span></td>
                 <td><span class="nullable-yes">NULL</span></td>
+                <td style="text-align: center; font-weight: 600;"><span class="null-value">0%</span></td>
                 <td class="sample-data"><span class="null-value">No data</span></td>
             </tr>
 
@@ -546,6 +599,7 @@
                 <td>Column: created_at</td>
                 <td><span class="column-type">TIMESTAMP</span></td>
                 <td><span class="nullable-yes">NULL</span></td>
+                <td style="text-align: center; font-weight: 600;"><span class="null-value">0%</span></td>
                 <td class="sample-data"><span class="null-value">No data</span></td>
             </tr>
 
@@ -553,14 +607,15 @@
 <div class="no-data-warning">⚠️ <strong>No data in this table yet.</strong> Run a crawl to populate it with actual data.</div>
         <h2>📊 crawl_sessions</h2>
         <div class="table-comment">Tracks crawler execution sessions with statistics and status - used for monitoring and debugging crawler runs</div>
-<div class="table-count">📊 Row Count: <strong>3</strong> </div>
+<div class="table-count">📊 Row Count: <strong>1</strong> </div>
         <table>
             <tr>
                 <th style="width: 180px">Column Name</th>
-                <th style="width: 450px">Description</th>
-                <th style="width: 120px">Type</th>
-                <th style="width: 100px">Nullable</th>
-                <th>Sample Data (first non-null value found)</th>
+                <th style="width: 380px">Description</th>
+                <th style="width: 110px">Type</th>
+                <th style="width: 90px">Nullable</th>
+                <th style="width: 100px">Completeness</th>
+                <th>Sample Data (diverse examples)</th>
             </tr>
 
             <tr>
@@ -568,6 +623,7 @@
                 <td>Auto-incrementing primary key</td>
                 <td><span class="column-type">INTEGER</span></td>
                 <td><span class="nullable-no">NOT NULL</span></td>
+                <td style="text-align: center; font-weight: 600;"><span class="completeness-high">100%</span></td>
                 <td class="sample-data">1</td>
             </tr>
 
@@ -576,7 +632,8 @@
                 <td>Unique session identifier (UUID or timestamp)</td>
                 <td><span class="column-type">VARCHAR</span></td>
                 <td><span class="nullable-no">NOT NULL</span></td>
-                <td class="sample-data">crawl-1760180349249</td>
+                <td style="text-align: center; font-weight: 600;"><span class="completeness-high">100%</span></td>
+                <td class="sample-data">crawl-1760267136322</td>
             </tr>
 
             <tr>
@@ -584,7 +641,8 @@
                 <td>When crawler session started</td>
                 <td><span class="column-type">TIMESTAMP</span></td>
                 <td><span class="nullable-yes">NULL</span></td>
-                <td class="sample-data">2025-10-11T13:59:09.708Z</td>
+                <td style="text-align: center; font-weight: 600;"><span class="completeness-high">100%</span></td>
+                <td class="sample-data">2025-10-12</td>
             </tr>
 
             <tr>
@@ -592,7 +650,8 @@
                 <td>When crawler session ended (NULL if running)</td>
                 <td><span class="column-type">TIMESTAMP</span></td>
                 <td><span class="nullable-yes">NULL</span></td>
-                <td class="sample-data">2025-10-11T14:03:06.163Z</td>
+                <td style="text-align: center; font-weight: 600;"><span class="completeness-high">100%</span></td>
+                <td class="sample-data">2025-10-12</td>
             </tr>
 
             <tr>
@@ -600,6 +659,7 @@
                 <td>City targeted for crawl (חיפה)</td>
                 <td><span class="column-type">VARCHAR</span></td>
                 <td><span class="nullable-yes">NULL</span></td>
+                <td style="text-align: center; font-weight: 600;"><span class="completeness-high">100%</span></td>
                 <td class="sample-data">חיפה</td>
             </tr>
 
@@ -608,6 +668,7 @@
                 <td>Column: max_properties</td>
                 <td><span class="column-type">INTEGER</span></td>
                 <td><span class="nullable-yes">NULL</span></td>
+                <td style="text-align: center; font-weight: 600;"><span class="completeness-high">100%</span></td>
                 <td class="sample-data">3</td>
             </tr>
 
@@ -616,6 +677,7 @@
                 <td>Total properties discovered</td>
                 <td><span class="column-type">INTEGER</span></td>
                 <td><span class="nullable-yes">NULL</span></td>
+                <td style="text-align: center; font-weight: 600;"><span class="completeness-high">100%</span></td>
                 <td class="sample-data">3</td>
             </tr>
 
@@ -624,7 +686,8 @@
                 <td>New properties added</td>
                 <td><span class="column-type">INTEGER</span></td>
                 <td><span class="nullable-yes">NULL</span></td>
-                <td class="sample-data">3</td>
+                <td style="text-align: center; font-weight: 600;"><span class="completeness-high">100%</span></td>
+                <td class="sample-data">2</td>
             </tr>
 
             <tr>
@@ -632,6 +695,7 @@
                 <td>Existing properties updated</td>
                 <td><span class="column-type">INTEGER</span></td>
                 <td><span class="nullable-yes">NULL</span></td>
+                <td style="text-align: center; font-weight: 600;"><span class="completeness-high">100%</span></td>
                 <td class="sample-data">0</td>
             </tr>
 
@@ -640,7 +704,8 @@
                 <td>Properties that failed</td>
                 <td><span class="column-type">INTEGER</span></td>
                 <td><span class="nullable-yes">NULL</span></td>
-                <td class="sample-data">0</td>
+                <td style="text-align: center; font-weight: 600;"><span class="completeness-high">100%</span></td>
+                <td class="sample-data">1</td>
             </tr>
 
             <tr>
@@ -648,6 +713,7 @@
                 <td>Images successfully downloaded</td>
                 <td><span class="column-type">INTEGER</span></td>
                 <td><span class="nullable-yes">NULL</span></td>
+                <td style="text-align: center; font-weight: 600;"><span class="completeness-high">100%</span></td>
                 <td class="sample-data">0</td>
             </tr>
 
@@ -656,6 +722,7 @@
                 <td>Column: images_failed</td>
                 <td><span class="column-type">INTEGER</span></td>
                 <td><span class="nullable-yes">NULL</span></td>
+                <td style="text-align: center; font-weight: 600;"><span class="completeness-high">100%</span></td>
                 <td class="sample-data">0</td>
             </tr>
 
@@ -664,6 +731,7 @@
                 <td>Session status: running | completed | failed | interrupted</td>
                 <td><span class="column-type">VARCHAR</span></td>
                 <td><span class="nullable-yes">NULL</span></td>
+                <td style="text-align: center; font-weight: 600;"><span class="completeness-high">100%</span></td>
                 <td class="sample-data">completed</td>
             </tr>
 
@@ -672,6 +740,7 @@
                 <td>Error message if session failed</td>
                 <td><span class="column-type">VARCHAR</span></td>
                 <td><span class="nullable-yes">NULL</span></td>
+                <td style="text-align: center; font-weight: 600;"><span class="completeness-low">0%</span></td>
                 <td class="sample-data"><span class="null-value">No data</span></td>
             </tr>
 
@@ -680,6 +749,7 @@
                 <td>Column: user_agent</td>
                 <td><span class="column-type">VARCHAR</span></td>
                 <td><span class="nullable-yes">NULL</span></td>
+                <td style="text-align: center; font-weight: 600;"><span class="completeness-low">0%</span></td>
                 <td class="sample-data"><span class="null-value">No data</span></td>
             </tr>
 
@@ -688,6 +758,7 @@
                 <td>Column: ip_address</td>
                 <td><span class="column-type">VARCHAR</span></td>
                 <td><span class="nullable-yes">NULL</span></td>
+                <td style="text-align: center; font-weight: 600;"><span class="completeness-low">0%</span></td>
                 <td class="sample-data"><span class="null-value">No data</span></td>
             </tr>
 
@@ -696,6 +767,7 @@
                 <td>Column: notes</td>
                 <td><span class="column-type">VARCHAR</span></td>
                 <td><span class="nullable-yes">NULL</span></td>
+                <td style="text-align: center; font-weight: 600;"><span class="completeness-low">0%</span></td>
                 <td class="sample-data"><span class="null-value">No data</span></td>
             </tr>
 
@@ -703,14 +775,15 @@
 
         <h2>⚠️ crawl_errors</h2>
         <div class="table-comment">Logs all errors encountered during crawling for debugging and quality monitoring</div>
-<div class="table-count">📊 Row Count: <strong>0</strong> (Empty - no data yet)</div>
+<div class="table-count">📊 Row Count: <strong>1</strong> </div>
         <table>
             <tr>
                 <th style="width: 180px">Column Name</th>
-                <th style="width: 450px">Description</th>
-                <th style="width: 120px">Type</th>
-                <th style="width: 100px">Nullable</th>
-                <th>Sample Data (first non-null value found)</th>
+                <th style="width: 380px">Description</th>
+                <th style="width: 110px">Type</th>
+                <th style="width: 90px">Nullable</th>
+                <th style="width: 100px">Completeness</th>
+                <th>Sample Data (diverse examples)</th>
             </tr>
 
             <tr>
@@ -718,7 +791,8 @@
                 <td>Auto-incrementing primary key</td>
                 <td><span class="column-type">INTEGER</span></td>
                 <td><span class="nullable-no">NOT NULL</span></td>
-                <td class="sample-data"><span class="null-value">No data</span></td>
+                <td style="text-align: center; font-weight: 600;"><span class="completeness-high">100%</span></td>
+                <td class="sample-data">1</td>
             </tr>
 
             <tr>
@@ -726,7 +800,8 @@
                 <td>Foreign key to crawl_sessions</td>
                 <td><span class="column-type">VARCHAR</span></td>
                 <td><span class="nullable-yes">NULL</span></td>
-                <td class="sample-data"><span class="null-value">No data</span></td>
+                <td style="text-align: center; font-weight: 600;"><span class="completeness-high">100%</span></td>
+                <td class="sample-data">crawl-1760267136322</td>
             </tr>
 
             <tr>
@@ -734,7 +809,8 @@
                 <td>Category: navigation/extraction/validation/network/blocking</td>
                 <td><span class="column-type">VARCHAR</span></td>
                 <td><span class="nullable-no">NOT NULL</span></td>
-                <td class="sample-data"><span class="null-value">No data</span></td>
+                <td style="text-align: center; font-weight: 600;"><span class="completeness-high">100%</span></td>
+                <td class="sample-data">blocking</td>
             </tr>
 
             <tr>
@@ -742,7 +818,8 @@
                 <td>Human-readable error message</td>
                 <td><span class="column-type">VARCHAR</span></td>
                 <td><span class="nullable-no">NOT NULL</span></td>
-                <td class="sample-data"><span class="null-value">No data</span></td>
+                <td style="text-align: center; font-weight: 600;"><span class="completeness-high">100%</span></td>
+                <td class="sample-data">403 Forbidden on fresh browser</td>
             </tr>
 
             <tr>
@@ -750,6 +827,7 @@
                 <td>Full stack trace for debugging</td>
                 <td><span class="column-type">VARCHAR</span></td>
                 <td><span class="nullable-yes">NULL</span></td>
+                <td style="text-align: center; font-weight: 600;"><span class="completeness-low">0%</span></td>
                 <td class="sample-data"><span class="null-value">No data</span></td>
             </tr>
 
@@ -758,7 +836,8 @@
                 <td>URL where error occurred</td>
                 <td><span class="column-type">VARCHAR</span></td>
                 <td><span class="nullable-yes">NULL</span></td>
-                <td class="sample-data"><span class="null-value">No data</span></td>
+                <td style="text-align: center; font-weight: 600;"><span class="completeness-high">100%</span></td>
+                <td class="sample-data">https://www.madlan.co.il/listings/8YX1osoZmBf</td>
             </tr>
 
             <tr>
@@ -766,6 +845,7 @@
                 <td>Property being processed when error occurred</td>
                 <td><span class="column-type">VARCHAR</span></td>
                 <td><span class="nullable-yes">NULL</span></td>
+                <td style="text-align: center; font-weight: 600;"><span class="completeness-low">0%</span></td>
                 <td class="sample-data"><span class="null-value">No data</span></td>
             </tr>
 
@@ -774,21 +854,23 @@
                 <td>Timestamp when error occurred</td>
                 <td><span class="column-type">TIMESTAMP</span></td>
                 <td><span class="nullable-yes">NULL</span></td>
-                <td class="sample-data"><span class="null-value">No data</span></td>
+                <td style="text-align: center; font-weight: 600;"><span class="completeness-high">100%</span></td>
+                <td class="sample-data">2025-10-12</td>
             </tr>
 
         </table>
-<div class="no-data-warning">⚠️ <strong>No data in this table yet.</strong> Run a crawl to populate it with actual data.</div>
+
         <h2>💰 transaction_history</h2>
         <div class="table-comment">Historical real estate transactions for pricing trends (חשוב לדעת section) - Transaction date, price, rooms, size per property</div>
-<div class="table-count">📊 Row Count: <strong>0</strong> (Empty - no data yet)</div>
+<div class="table-count">📊 Row Count: <strong>18</strong> </div>
         <table>
             <tr>
                 <th style="width: 180px">Column Name</th>
-                <th style="width: 450px">Description</th>
-                <th style="width: 120px">Type</th>
-                <th style="width: 100px">Nullable</th>
-                <th>Sample Data (first non-null value found)</th>
+                <th style="width: 380px">Description</th>
+                <th style="width: 110px">Type</th>
+                <th style="width: 90px">Nullable</th>
+                <th style="width: 100px">Completeness</th>
+                <th>Sample Data (diverse examples)</th>
             </tr>
 
             <tr>
@@ -796,7 +878,8 @@
                 <td>Auto-incrementing primary key</td>
                 <td><span class="column-type">INTEGER</span></td>
                 <td><span class="nullable-no">NOT NULL</span></td>
-                <td class="sample-data"><span class="null-value">No data</span></td>
+                <td style="text-align: center; font-weight: 600;"><span class="completeness-high">100%</span></td>
+                <td class="sample-data">1<br>12<br>17</td>
             </tr>
 
             <tr>
@@ -804,7 +887,8 @@
                 <td>Foreign key to properties table</td>
                 <td><span class="column-type">VARCHAR</span></td>
                 <td><span class="nullable-no">NOT NULL</span></td>
-                <td class="sample-data"><span class="null-value">No data</span></td>
+                <td style="text-align: center; font-weight: 600;"><span class="completeness-high">100%</span></td>
+                <td class="sample-data">cyFEz0PGcws<br>PbZGJU4TlN1</td>
             </tr>
 
             <tr>
@@ -812,7 +896,8 @@
                 <td>Column: transaction_address</td>
                 <td><span class="column-type">VARCHAR</span></td>
                 <td><span class="nullable-yes">NULL</span></td>
-                <td class="sample-data"><span class="null-value">No data</span></td>
+                <td style="text-align: center; font-weight: 600;"><span class="completeness-high">100%</span></td>
+                <td class="sample-data">קדימה 43 חיפה<br>נורית 36<br>קדימה 25</td>
             </tr>
 
             <tr>
@@ -820,7 +905,8 @@
                 <td>Date of transaction (sale/rental)</td>
                 <td><span class="column-type">DATE</span></td>
                 <td><span class="nullable-yes">NULL</span></td>
-                <td class="sample-data"><span class="null-value">No data</span></td>
+                <td style="text-align: center; font-weight: 600;"><span class="completeness-high">89%</span></td>
+                <td class="sample-data">2025-03-25<br>2025-06-05<br>2025-04-07</td>
             </tr>
 
             <tr>
@@ -828,7 +914,8 @@
                 <td>Column: transaction_price</td>
                 <td><span class="column-type">INTEGER</span></td>
                 <td><span class="nullable-yes">NULL</span></td>
-                <td class="sample-data"><span class="null-value">No data</span></td>
+                <td style="text-align: center; font-weight: 600;"><span class="completeness-high">100%</span></td>
+                <td class="sample-data">2300000<br>2210000<br>1960000</td>
             </tr>
 
             <tr>
@@ -836,7 +923,8 @@
                 <td>Column: transaction_size</td>
                 <td><span class="column-type">DECIMAL(6,2)</span></td>
                 <td><span class="nullable-yes">NULL</span></td>
-                <td class="sample-data"><span class="null-value">No data</span></td>
+                <td style="text-align: center; font-weight: 600;"><span class="completeness-high">100%</span></td>
+                <td class="sample-data">98<br>97<br>200</td>
             </tr>
 
             <tr>
@@ -844,7 +932,8 @@
                 <td>Column: transaction_price_per_sqm</td>
                 <td><span class="column-type">INTEGER</span></td>
                 <td><span class="nullable-yes">NULL</span></td>
-                <td class="sample-data"><span class="null-value">No data</span></td>
+                <td style="text-align: center; font-weight: 600;"><span class="completeness-high">100%</span></td>
+                <td class="sample-data">27238<br>29365<br>14146</td>
             </tr>
 
             <tr>
@@ -852,7 +941,8 @@
                 <td>Column: transaction_floor</td>
                 <td><span class="column-type">INTEGER</span></td>
                 <td><span class="nullable-yes">NULL</span></td>
-                <td class="sample-data"><span class="null-value">No data</span></td>
+                <td style="text-align: center; font-weight: 600;"><span class="completeness-medium">78%</span></td>
+                <td class="sample-data">5<br>3<br>2</td>
             </tr>
 
             <tr>
@@ -860,7 +950,8 @@
                 <td>Column: transaction_rooms</td>
                 <td><span class="column-type">DECIMAL(3,1)</span></td>
                 <td><span class="nullable-yes">NULL</span></td>
-                <td class="sample-data"><span class="null-value">No data</span></td>
+                <td style="text-align: center; font-weight: 600;"><span class="completeness-high">100%</span></td>
+                <td class="sample-data">3<br>4<br>6</td>
             </tr>
 
             <tr>
@@ -868,7 +959,8 @@
                 <td>Column: year_built</td>
                 <td><span class="column-type">INTEGER</span></td>
                 <td><span class="nullable-yes">NULL</span></td>
-                <td class="sample-data"><span class="null-value">No data</span></td>
+                <td style="text-align: center; font-weight: 600;"><span class="completeness-high">94%</span></td>
+                <td class="sample-data">2022<br>2024<br>1992</td>
             </tr>
 
             <tr>
@@ -876,21 +968,23 @@
                 <td>Column: created_at</td>
                 <td><span class="column-type">TIMESTAMP</span></td>
                 <td><span class="nullable-yes">NULL</span></td>
-                <td class="sample-data"><span class="null-value">No data</span></td>
+                <td style="text-align: center; font-weight: 600;"><span class="completeness-high">100%</span></td>
+                <td class="sample-data">2025-10-12<br>2025-10-12<br>2025-10-12</td>
             </tr>
 
         </table>
-<div class="no-data-warning">⚠️ <strong>No data in this table yet.</strong> Run a crawl to populate it with actual data.</div>
+
         <h2>🏫 nearby_schools</h2>
         <div class="table-comment">Schools near property with distance and type (בתי ספר section) - Name, type, distance, grade range</div>
-<div class="table-count">📊 Row Count: <strong>0</strong> (Empty - no data yet)</div>
+<div class="table-count">📊 Row Count: <strong>6</strong> </div>
         <table>
             <tr>
                 <th style="width: 180px">Column Name</th>
-                <th style="width: 450px">Description</th>
-                <th style="width: 120px">Type</th>
-                <th style="width: 100px">Nullable</th>
-                <th>Sample Data (first non-null value found)</th>
+                <th style="width: 380px">Description</th>
+                <th style="width: 110px">Type</th>
+                <th style="width: 90px">Nullable</th>
+                <th style="width: 100px">Completeness</th>
+                <th>Sample Data (diverse examples)</th>
             </tr>
 
             <tr>
@@ -898,7 +992,8 @@
                 <td>Auto-incrementing primary key</td>
                 <td><span class="column-type">INTEGER</span></td>
                 <td><span class="nullable-no">NOT NULL</span></td>
-                <td class="sample-data"><span class="null-value">No data</span></td>
+                <td style="text-align: center; font-weight: 600;"><span class="completeness-high">100%</span></td>
+                <td class="sample-data">3<br>2<br>1</td>
             </tr>
 
             <tr>
@@ -906,7 +1001,8 @@
                 <td>Foreign key to properties table</td>
                 <td><span class="column-type">VARCHAR</span></td>
                 <td><span class="nullable-no">NOT NULL</span></td>
-                <td class="sample-data"><span class="null-value">No data</span></td>
+                <td style="text-align: center; font-weight: 600;"><span class="completeness-high">100%</span></td>
+                <td class="sample-data">PbZGJU4TlN1<br>cyFEz0PGcws</td>
             </tr>
 
             <tr>
@@ -914,7 +1010,8 @@
                 <td>Name of school in Hebrew</td>
                 <td><span class="column-type">VARCHAR</span></td>
                 <td><span class="nullable-no">NOT NULL</span></td>
-                <td class="sample-data"><span class="null-value">No data</span></td>
+                <td style="text-align: center; font-weight: 600;"><span class="completeness-high">100%</span></td>
+                <td class="sample-data">אופקים<br>אהוד<br>הריאלי העברי</td>
             </tr>
 
             <tr>
@@ -922,7 +1019,8 @@
                 <td>Type: יסודי, חטיבה, תיכון</td>
                 <td><span class="column-type">VARCHAR</span></td>
                 <td><span class="nullable-yes">NULL</span></td>
-                <td class="sample-data"><span class="null-value">No data</span></td>
+                <td style="text-align: center; font-weight: 600;"><span class="completeness-high">100%</span></td>
+                <td class="sample-data">ממלכתי דתי<br>ממלכתי</td>
             </tr>
 
             <tr>
@@ -930,7 +1028,8 @@
                 <td>Column: grades_offered</td>
                 <td><span class="column-type">VARCHAR</span></td>
                 <td><span class="nullable-yes">NULL</span></td>
-                <td class="sample-data"><span class="null-value">No data</span></td>
+                <td style="text-align: center; font-weight: 600;"><span class="completeness-high">100%</span></td>
+                <td class="sample-data">א-ו<br>א-ח<br>א-יב</td>
             </tr>
 
             <tr>
@@ -938,6 +1037,7 @@
                 <td>Distance from property in meters</td>
                 <td><span class="column-type">INTEGER</span></td>
                 <td><span class="nullable-yes">NULL</span></td>
+                <td style="text-align: center; font-weight: 600;"><span class="completeness-low">0%</span></td>
                 <td class="sample-data"><span class="null-value">No data</span></td>
             </tr>
 
@@ -946,21 +1046,23 @@
                 <td>Column: created_at</td>
                 <td><span class="column-type">TIMESTAMP</span></td>
                 <td><span class="nullable-yes">NULL</span></td>
-                <td class="sample-data"><span class="null-value">No data</span></td>
+                <td style="text-align: center; font-weight: 600;"><span class="completeness-high">100%</span></td>
+                <td class="sample-data">2025-10-12<br>2025-10-12<br>2025-10-12</td>
             </tr>
 
         </table>
-<div class="no-data-warning">⚠️ <strong>No data in this table yet.</strong> Run a crawl to populate it with actual data.</div>
+
         <h2>⭐ neighborhood_ratings</h2>
         <div class="table-comment">Community ratings 1-10 across multiple categories (דירוגי השכנים) - Safety, cleanliness, noise, parking, public transport, quality of life</div>
-<div class="table-count">📊 Row Count: <strong>33</strong> </div>
+<div class="table-count">📊 Row Count: <strong>2</strong> </div>
         <table>
             <tr>
                 <th style="width: 180px">Column Name</th>
-                <th style="width: 450px">Description</th>
-                <th style="width: 120px">Type</th>
-                <th style="width: 100px">Nullable</th>
-                <th>Sample Data (first non-null value found)</th>
+                <th style="width: 380px">Description</th>
+                <th style="width: 110px">Type</th>
+                <th style="width: 90px">Nullable</th>
+                <th style="width: 100px">Completeness</th>
+                <th>Sample Data (diverse examples)</th>
             </tr>
 
             <tr>
@@ -968,7 +1070,8 @@
                 <td>Auto-incrementing primary key</td>
                 <td><span class="column-type">INTEGER</span></td>
                 <td><span class="nullable-no">NOT NULL</span></td>
-                <td class="sample-data">5</td>
+                <td style="text-align: center; font-weight: 600;"><span class="completeness-high">100%</span></td>
+                <td class="sample-data">1<br>2</td>
             </tr>
 
             <tr>
@@ -976,7 +1079,8 @@
                 <td>Foreign key to properties table (one per property)</td>
                 <td><span class="column-type">VARCHAR</span></td>
                 <td><span class="nullable-no">NOT NULL</span></td>
-                <td class="sample-data">5BzpHqFwgd7</td>
+                <td style="text-align: center; font-weight: 600;"><span class="completeness-high">100%</span></td>
+                <td class="sample-data">PbZGJU4TlN1<br>cyFEz0PGcws</td>
             </tr>
 
             <tr>
@@ -984,7 +1088,8 @@
                 <td>Column: community_feeling</td>
                 <td><span class="column-type">INTEGER</span></td>
                 <td><span class="nullable-yes">NULL</span></td>
-                <td class="sample-data">7</td>
+                <td style="text-align: center; font-weight: 600;"><span class="completeness-high">100%</span></td>
+                <td class="sample-data">6<br>8</td>
             </tr>
 
             <tr>
@@ -992,7 +1097,8 @@
                 <td>Column: cleanliness_maintenance</td>
                 <td><span class="column-type">INTEGER</span></td>
                 <td><span class="nullable-yes">NULL</span></td>
-                <td class="sample-data">5</td>
+                <td style="text-align: center; font-weight: 600;"><span class="completeness-high">100%</span></td>
+                <td class="sample-data">9</td>
             </tr>
 
             <tr>
@@ -1000,7 +1106,8 @@
                 <td>Column: schools_quality</td>
                 <td><span class="column-type">INTEGER</span></td>
                 <td><span class="nullable-yes">NULL</span></td>
-                <td class="sample-data">9</td>
+                <td style="text-align: center; font-weight: 600;"><span class="completeness-high">100%</span></td>
+                <td class="sample-data">7<br>8</td>
             </tr>
 
             <tr>
@@ -1008,7 +1115,8 @@
                 <td>Column: public_transport</td>
                 <td><span class="column-type">INTEGER</span></td>
                 <td><span class="nullable-yes">NULL</span></td>
-                <td class="sample-data">8</td>
+                <td style="text-align: center; font-weight: 600;"><span class="completeness-high">100%</span></td>
+                <td class="sample-data">8<br>7</td>
             </tr>
 
             <tr>
@@ -1016,7 +1124,8 @@
                 <td>Column: shopping_convenience</td>
                 <td><span class="column-type">INTEGER</span></td>
                 <td><span class="nullable-yes">NULL</span></td>
-                <td class="sample-data">6</td>
+                <td style="text-align: center; font-weight: 600;"><span class="completeness-high">100%</span></td>
+                <td class="sample-data">7<br>8</td>
             </tr>
 
             <tr>
@@ -1024,7 +1133,8 @@
                 <td>Column: entertainment_leisure</td>
                 <td><span class="column-type">INTEGER</span></td>
                 <td><span class="nullable-yes">NULL</span></td>
-                <td class="sample-data">6</td>
+                <td style="text-align: center; font-weight: 600;"><span class="completeness-high">100%</span></td>
+                <td class="sample-data">5<br>9</td>
             </tr>
 
             <tr>
@@ -1032,7 +1142,8 @@
                 <td>Column: overall_rating</td>
                 <td><span class="column-type">DECIMAL(3,1)</span></td>
                 <td><span class="nullable-yes">NULL</span></td>
-                <td class="sample-data">6.8</td>
+                <td style="text-align: center; font-weight: 600;"><span class="completeness-high">100%</span></td>
+                <td class="sample-data">7.3<br>7.8</td>
             </tr>
 
             <tr>
@@ -1040,21 +1151,23 @@
                 <td>Column: created_at</td>
                 <td><span class="column-type">TIMESTAMP</span></td>
                 <td><span class="nullable-yes">NULL</span></td>
-                <td class="sample-data">2025-10-11T14:22:04.132Z</td>
+                <td style="text-align: center; font-weight: 600;"><span class="completeness-high">100%</span></td>
+                <td class="sample-data">2025-10-12<br>2025-10-12</td>
             </tr>
 
         </table>
 
         <h2>📈 price_comparisons</h2>
         <div class="table-comment">Average price data by room count for neighborhood (מחירי דירות) - Average prices for 2-6 room apartments</div>
-<div class="table-count">📊 Row Count: <strong>67</strong> </div>
+<div class="table-count">📊 Row Count: <strong>3</strong> </div>
         <table>
             <tr>
                 <th style="width: 180px">Column Name</th>
-                <th style="width: 450px">Description</th>
-                <th style="width: 120px">Type</th>
-                <th style="width: 100px">Nullable</th>
-                <th>Sample Data (first non-null value found)</th>
+                <th style="width: 380px">Description</th>
+                <th style="width: 110px">Type</th>
+                <th style="width: 90px">Nullable</th>
+                <th style="width: 100px">Completeness</th>
+                <th>Sample Data (diverse examples)</th>
             </tr>
 
             <tr>
@@ -1062,7 +1175,8 @@
                 <td>Auto-incrementing primary key</td>
                 <td><span class="column-type">INTEGER</span></td>
                 <td><span class="nullable-no">NOT NULL</span></td>
-                <td class="sample-data">1</td>
+                <td style="text-align: center; font-weight: 600;"><span class="completeness-high">100%</span></td>
+                <td class="sample-data">1<br>3<br>2</td>
             </tr>
 
             <tr>
@@ -1070,7 +1184,8 @@
                 <td>Foreign key to properties table</td>
                 <td><span class="column-type">VARCHAR</span></td>
                 <td><span class="nullable-no">NOT NULL</span></td>
-                <td class="sample-data">8YX1osoZmBf</td>
+                <td style="text-align: center; font-weight: 600;"><span class="completeness-high">100%</span></td>
+                <td class="sample-data">PbZGJU4TlN1<br>cyFEz0PGcws</td>
             </tr>
 
             <tr>
@@ -1078,7 +1193,8 @@
                 <td>Number of rooms (2, 3, 4, 5, 6+)</td>
                 <td><span class="column-type">INTEGER</span></td>
                 <td><span class="nullable-no">NOT NULL</span></td>
-                <td class="sample-data">3</td>
+                <td style="text-align: center; font-weight: 600;"><span class="completeness-high">100%</span></td>
+                <td class="sample-data">4<br>5</td>
             </tr>
 
             <tr>
@@ -1086,7 +1202,8 @@
                 <td>Average price for this room count in neighborhood</td>
                 <td><span class="column-type">INTEGER</span></td>
                 <td><span class="nullable-yes">NULL</span></td>
-                <td class="sample-data">4034635</td>
+                <td style="text-align: center; font-weight: 600;"><span class="completeness-high">100%</span></td>
+                <td class="sample-data">8896154<br>2492643<br>7877172</td>
             </tr>
 
             <tr>
@@ -1094,6 +1211,7 @@
                 <td>Column: old_price</td>
                 <td><span class="column-type">INTEGER</span></td>
                 <td><span class="nullable-yes">NULL</span></td>
+                <td style="text-align: center; font-weight: 600;"><span class="completeness-low">0%</span></td>
                 <td class="sample-data"><span class="null-value">No data</span></td>
             </tr>
 
@@ -1102,6 +1220,7 @@
                 <td>Column: new_price</td>
                 <td><span class="column-type">INTEGER</span></td>
                 <td><span class="nullable-yes">NULL</span></td>
+                <td style="text-align: center; font-weight: 600;"><span class="completeness-low">0%</span></td>
                 <td class="sample-data"><span class="null-value">No data</span></td>
             </tr>
 
@@ -1110,6 +1229,7 @@
                 <td>Column: price_trend</td>
                 <td><span class="column-type">VARCHAR</span></td>
                 <td><span class="nullable-yes">NULL</span></td>
+                <td style="text-align: center; font-weight: 600;"><span class="completeness-low">0%</span></td>
                 <td class="sample-data"><span class="null-value">No data</span></td>
             </tr>
 
@@ -1118,21 +1238,23 @@
                 <td>Column: created_at</td>
                 <td><span class="column-type">TIMESTAMP</span></td>
                 <td><span class="nullable-yes">NULL</span></td>
-                <td class="sample-data">2025-10-11T14:00:34.322Z</td>
+                <td style="text-align: center; font-weight: 600;"><span class="completeness-high">100%</span></td>
+                <td class="sample-data">2025-10-12<br>2025-10-12<br>2025-10-12</td>
             </tr>
 
         </table>
 
         <h2>🏗️ new_construction_projects</h2>
         <div class="table-comment">Construction projects nearby with status and details (בניה חדשה) - Project name, location, distance, status, completion date</div>
-<div class="table-count">📊 Row Count: <strong>0</strong> (Empty - no data yet)</div>
+<div class="table-count">📊 Row Count: <strong>28</strong> </div>
         <table>
             <tr>
                 <th style="width: 180px">Column Name</th>
-                <th style="width: 450px">Description</th>
-                <th style="width: 120px">Type</th>
-                <th style="width: 100px">Nullable</th>
-                <th>Sample Data (first non-null value found)</th>
+                <th style="width: 380px">Description</th>
+                <th style="width: 110px">Type</th>
+                <th style="width: 90px">Nullable</th>
+                <th style="width: 100px">Completeness</th>
+                <th>Sample Data (diverse examples)</th>
             </tr>
 
             <tr>
@@ -1140,7 +1262,8 @@
                 <td>Auto-incrementing primary key</td>
                 <td><span class="column-type">INTEGER</span></td>
                 <td><span class="nullable-no">NOT NULL</span></td>
-                <td class="sample-data"><span class="null-value">No data</span></td>
+                <td style="text-align: center; font-weight: 600;"><span class="completeness-high">100%</span></td>
+                <td class="sample-data">1<br>12<br>17</td>
             </tr>
 
             <tr>
@@ -1148,7 +1271,8 @@
                 <td>Foreign key to properties table</td>
                 <td><span class="column-type">VARCHAR</span></td>
                 <td><span class="nullable-no">NOT NULL</span></td>
-                <td class="sample-data"><span class="null-value">No data</span></td>
+                <td style="text-align: center; font-weight: 600;"><span class="completeness-high">100%</span></td>
+                <td class="sample-data">PbZGJU4TlN1<br>cyFEz0PGcws</td>
             </tr>
 
             <tr>
@@ -1156,7 +1280,8 @@
                 <td>Name of construction project</td>
                 <td><span class="column-type">VARCHAR</span></td>
                 <td><span class="nullable-yes">NULL</span></td>
-                <td class="sample-data"><span class="null-value">No data</span></td>
+                <td style="text-align: center; font-weight: 600;"><span class="completeness-high">100%</span></td>
+                <td class="sample-data">פרשקובסקי ברמת הנשיא<br>שבירו בחיפה<br>עמק הכרמל RESERVE, נשר</td>
             </tr>
 
             <tr>
@@ -1164,7 +1289,8 @@
                 <td>Column: project_location</td>
                 <td><span class="column-type">VARCHAR</span></td>
                 <td><span class="nullable-yes">NULL</span></td>
-                <td class="sample-data"><span class="null-value">No data</span></td>
+                <td style="text-align: center; font-weight: 600;"><span class="completeness-high">93%</span></td>
+                <td class="sample-data">ברל כצנלסון 84-86 חיפהדירות 5-3 חד׳10 קומותראם פנחס 84, חיפה<br>שושנה דמארי 6 חיפהדירות 6-5 חד׳7 קומותשושנה דמארי 6, חיפה<br>יהודה עמיחי 4 חיפהדירות 5 חד׳7 קומותיהודה עמיחי 4, חיפה</td>
             </tr>
 
             <tr>
@@ -1172,6 +1298,7 @@
                 <td>Distance from property in meters</td>
                 <td><span class="column-type">INTEGER</span></td>
                 <td><span class="nullable-yes">NULL</span></td>
+                <td style="text-align: center; font-weight: 600;"><span class="completeness-low">0%</span></td>
                 <td class="sample-data"><span class="null-value">No data</span></td>
             </tr>
 
@@ -1180,6 +1307,7 @@
                 <td>Column: project_status</td>
                 <td><span class="column-type">VARCHAR</span></td>
                 <td><span class="nullable-yes">NULL</span></td>
+                <td style="text-align: center; font-weight: 600;"><span class="completeness-low">0%</span></td>
                 <td class="sample-data"><span class="null-value">No data</span></td>
             </tr>
 
@@ -1188,6 +1316,7 @@
                 <td>Column: completion_date</td>
                 <td><span class="column-type">VARCHAR</span></td>
                 <td><span class="nullable-yes">NULL</span></td>
+                <td style="text-align: center; font-weight: 600;"><span class="completeness-low">0%</span></td>
                 <td class="sample-data"><span class="null-value">No data</span></td>
             </tr>
 
@@ -1196,11 +1325,12 @@
                 <td>Column: created_at</td>
                 <td><span class="column-type">TIMESTAMP</span></td>
                 <td><span class="nullable-yes">NULL</span></td>
-                <td class="sample-data"><span class="null-value">No data</span></td>
+                <td style="text-align: center; font-weight: 600;"><span class="completeness-high">100%</span></td>
+                <td class="sample-data">2025-10-12<br>2025-10-12<br>2025-10-12</td>
             </tr>
 
         </table>
-<div class="no-data-warning">⚠️ <strong>No data in this table yet.</strong> Run a crawl to populate it with actual data.</div>
+
         <div class="metadata">
             <h3>📋 Schema Information</h3>
             <p><strong>Schema Version:</strong> Phase 5C - DuckDB-only architecture</p>

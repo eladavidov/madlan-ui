@@ -35,8 +35,14 @@ export async function extractPropertyData(
     const totalFloors = await extractNumberByLabel(page, 'קומות בבניין');
 
     // Extract enhanced property metrics (Phase 5B)
-    const pricePerSqm = await extractNumberByLabel(page, 'מחיר למ״ר');
-    const expectedYield = await extractNumberByLabel(page, 'תשואה');
+    let pricePerSqm = await extractNumberByLabel(page, 'מחיר למ״ר');
+
+    // Fallback: Calculate price_per_sqm if not found but we have price and size
+    if (!pricePerSqm && price && size && size > 0) {
+      pricePerSqm = Math.round(price / size);
+    }
+
+    const expectedYield = await extractYield(page);
 
     // Extract address (H1 contains full location)
     const addressFull = await extractText(page, PROPERTY_PAGE_SELECTORS.address);
@@ -57,38 +63,26 @@ export async function extractPropertyData(
       return heading?.nextElementSibling?.textContent?.trim() || null;
     });
 
-    // Extract neighborhood description (Phase 5B: "החיים בשכונה")
-    const neighborhoodDescription = await page.evaluate(() => {
-      const heading = Array.from(document.querySelectorAll('h2, h3')).find(h =>
-        h.textContent?.includes('החיים בשכונה')
-      );
-      if (!heading) return null;
-
-      // Try to find the description text (usually in next sibling or nearby element)
-      const nextElement = heading.nextElementSibling;
-      if (nextElement) {
-        const text = nextElement.textContent?.trim();
-        if (text && text.length > 20) { // Minimum length for valid description
-          return text;
-        }
-      }
-
-      // Try parent's next sibling
-      const parentNext = heading.parentElement?.nextElementSibling;
-      if (parentNext) {
-        const text = parentNext.textContent?.trim();
-        if (text && text.length > 20) {
-          return text;
-        }
-      }
-
-      return null;
-    });
-
-    // Extract map coordinates (Phase 5B)
+    // Extract map coordinates (Phase 5B) - Verified 2025-10-12
     const coordinates = await page.evaluate(() => {
       try {
-        // Method 1: Check for Mapbox map data attributes or embedded data
+        // Method 1: Check Mapbox map instance (PRIMARY - verified working)
+        if (typeof window !== 'undefined' && (window as any).__MAPBOX_MAP__) {
+          try {
+            const map = (window as any).__MAPBOX_MAP__;
+            const center = map.getCenter();
+            if (center && center.lat && center.lng) {
+              return {
+                latitude: center.lat,
+                longitude: center.lng
+              };
+            }
+          } catch (e) {
+            // Continue to fallback methods
+          }
+        }
+
+        // Method 2: Check for Mapbox map data attributes or embedded data
         const mapContainer = document.querySelector('[class*="map"], [class*="Map"]');
         if (mapContainer) {
           const dataLat = mapContainer.getAttribute('data-lat') || mapContainer.getAttribute('data-latitude');
@@ -101,7 +95,7 @@ export async function extractPropertyData(
           }
         }
 
-        // Method 2: Check for embedded JSON data (common pattern in SPAs)
+        // Method 3: Check for embedded JSON data (common pattern in SPAs)
         const scripts = Array.from(document.querySelectorAll('script'));
         for (const script of scripts) {
           const content = script.textContent || '';
@@ -137,14 +131,55 @@ export async function extractPropertyData(
     const isRenovated = await checkTextExists(page, PROPERTY_PAGE_SELECTORS.amenities.renovated);
     const isFurnished = await checkTextExists(page, PROPERTY_PAGE_SELECTORS.amenities.furnished);
 
-    // Extract contact info
-    const contactName = await extractText(page, PROPERTY_PAGE_SELECTORS.contactName);
-    const contactPhone = await extractText(page, PROPERTY_PAGE_SELECTORS.contactPhone);
+    // Extract contact info - Verified 2025-10-12
+    const contactName = await page.evaluate(() => {
+      // Find "יצירת קשר" heading
+      const contactHeading = Array.from(document.querySelectorAll('*')).find(el =>
+        el.textContent?.trim() === 'יצירת קשר'
+      );
+      if (!contactHeading) return null;
+
+      // Get next sibling (should be the name)
+      let current = contactHeading.nextElementSibling;
+      while (current) {
+        const text = current.textContent?.trim();
+        if (text && text.length < 20 && text.length > 1 &&
+            !text.includes('הציגו') && !text.includes('או ')) {
+          return text;
+        }
+        current = current.nextElementSibling;
+        if (text && text.includes('הציגו מספר')) break; // Stop at phone button
+      }
+      return null;
+    });
+
+    const contactPhone = await page.evaluate(() => {
+      // Find phone link and extract number from tel: href
+      const phoneLink = document.querySelector('a[href^="tel:"]');
+      if (phoneLink) {
+        const href = phoneLink.getAttribute('href');
+        if (href) {
+          // Extract number from "tel:073-8033616" format
+          return href.replace('tel:', '').trim();
+        }
+      }
+      return null;
+    });
+
     const contactAgency = await extractText(page, PROPERTY_PAGE_SELECTORS.contactAgency);
 
-    // Extract dates
-    const listingDate = await extractText(page, PROPERTY_PAGE_SELECTORS.listingDate);
-    const entryDate = await extractText(page, PROPERTY_PAGE_SELECTORS.entryDate);
+    // Extract dates - Verified 2025-10-12
+    const listingDate = await page.evaluate(() => {
+      // Search scripts for listing date
+      const scripts = Array.from(document.querySelectorAll('script:not([src])')).map(s => s.textContent || '');
+      for (const script of scripts) {
+        const dateMatch = script.match(/listing.*date['":\s]+['"]?(\d{4}-\d{2}-\d{2})/i);
+        if (dateMatch) return dateMatch[1];
+      }
+      return null;
+    });
+
+    const entryDate = await extractTextByLabel(page, 'תאריך כניסה');
 
     // Build property object
     const property: PropertyInput = {
@@ -161,7 +196,6 @@ export async function extractPropertyData(
       expected_yield: expectedYield ?? undefined,
       latitude: coordinates.latitude ?? undefined,
       longitude: coordinates.longitude ?? undefined,
-      neighborhood_description: neighborhoodDescription ?? undefined,
       // End Phase 5B additions
       address: address ?? undefined,
       neighborhood: neighborhood ?? undefined,
@@ -354,6 +388,102 @@ async function extractNumberByLabel(page: Page, labelText: string): Promise<numb
       }
     }
 
+    return isNaN(number) ? null : number;
+  } catch (error) {
+    return null;
+  }
+}
+
+/**
+ * Helper: Extract text by adjacent label text (similar to extractNumberByLabel but returns text)
+ * Example: Find "מיידי" next to "תאריך כניסה" (entry date)
+ */
+async function extractTextByLabel(page: Page, labelText: string): Promise<string | null> {
+  try {
+    const value = await page.evaluate((label) => {
+      // Find all elements
+      const elements = Array.from(document.querySelectorAll('*'));
+
+      // Find element with label text (exact match, no children)
+      const labelEl = elements.find(el =>
+        el.textContent?.trim() === label && el.children.length === 0
+      );
+
+      if (!labelEl) return null;
+
+      // Strategy 1: Check next sibling first (value often comes after label in RTL)
+      const nextSibling = labelEl.nextElementSibling;
+      if (nextSibling && nextSibling.children.length === 0) {
+        const text = nextSibling.textContent?.trim();
+        if (text && text.length > 0) {
+          return text;
+        }
+      }
+
+      // Strategy 2: Check previous sibling
+      const prevSibling = labelEl.previousElementSibling;
+      if (prevSibling && prevSibling.children.length === 0) {
+        const text = prevSibling.textContent?.trim();
+        if (text && text.length > 0) {
+          return text;
+        }
+      }
+
+      // Strategy 3: Look in parent container for a sibling with specific class
+      const parent = labelEl.parentElement;
+      if (parent) {
+        // Try to find by specific class (more reliable)
+        const valueWithClass = parent.querySelector('.css-1uz6ydw, .eajab3c2');
+        if (valueWithClass && valueWithClass !== labelEl) {
+          const text = valueWithClass.textContent?.trim();
+          if (text && text.length > 0) {
+            return text;
+          }
+        }
+
+        // Fallback: Find first text child in parent (excluding label)
+        if (parent.children.length >= 2 && parent.children.length <= 3) {
+          const valueEl = Array.from(parent.children).find(child =>
+            child !== labelEl &&
+            child.children.length === 0 &&
+            child.textContent?.trim()
+          );
+          if (valueEl) return valueEl.textContent?.trim() || null;
+        }
+      }
+
+      return null;
+    }, labelText);
+
+    return value || null;
+  } catch (error) {
+    return null;
+  }
+}
+
+/**
+ * Helper: Extract expected yield from "תשואה・4.55%" format in prices section
+ * Verified 2025-10-12
+ */
+async function extractYield(page: Page): Promise<number | null> {
+  try {
+    const value = await page.evaluate(() => {
+      // Find all elements containing "תשואה"
+      const elements = Array.from(document.querySelectorAll('*'));
+      for (const el of elements) {
+        const text = el.textContent?.trim() || '';
+        // Look for pattern: "תשואה・4.55%"
+        const match = text.match(/תשואה[^0-9]*([0-9.]+)\s*%/);
+        if (match) {
+          return match[1];
+        }
+      }
+      return null;
+    });
+
+    if (!value) return null;
+
+    const number = parseFloat(value);
     return isNaN(number) ? null : number;
   } catch (error) {
     return null;

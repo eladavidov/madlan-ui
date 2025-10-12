@@ -56,9 +56,12 @@ async function generateSchemaReport() {
         .column-type { color: white; background: #7f8c8d; font-size: 11px; font-family: 'Courier New', monospace; padding: 3px 8px; border-radius: 3px; display: inline-block; }
         .nullable-yes { color: #856404; background: #fff3cd; font-size: 11px; padding: 3px 8px; border-radius: 3px; display: inline-block; }
         .nullable-no { color: #721c24; background: #f8d7da; font-size: 11px; padding: 3px 8px; border-radius: 3px; display: inline-block; }
-        .sample-data { background: #fff9e6; padding: 8px; border-radius: 3px; font-family: 'Courier New', monospace; font-size: 12px; max-width: 400px; word-wrap: break-word; }
+        .sample-data { background: #fff9e6; padding: 8px; border-radius: 3px; font-family: 'Courier New', monospace; font-size: 12px; max-width: 400px; word-wrap: break-word; line-height: 1.6; }
         .null-value { color: #999; font-style: italic; }
         .no-data-warning { color: #e74c3c; font-style: italic; background: #fee; padding: 10px; border-radius: 4px; margin: 10px 0; }
+        .completeness-high { color: white; background: #28a745; font-size: 12px; padding: 4px 10px; border-radius: 3px; display: inline-block; font-weight: 600; }
+        .completeness-medium { color: white; background: #ffc107; font-size: 12px; padding: 4px 10px; border-radius: 3px; display: inline-block; font-weight: 600; }
+        .completeness-low { color: white; background: #dc3545; font-size: 12px; padding: 4px 10px; border-radius: 3px; display: inline-block; font-weight: 600; }
         .metadata { color: #7f8c8d; font-size: 13px; margin-top: 40px; padding-top: 30px; border-top: 2px solid #ddd; }
         .metadata h3 { color: #34495e; margin-top: 25px; }
         .metadata p { margin: 8px 0; line-height: 1.8; }
@@ -150,10 +153,11 @@ async function generateSchemaReport() {
         <table>
             <tr>
                 <th style="width: 180px">Column Name</th>
-                <th style="width: 450px">Description</th>
-                <th style="width: 120px">Type</th>
-                <th style="width: 100px">Nullable</th>
-                <th>Sample Data (first non-null value found)</th>
+                <th style="width: 380px">Description</th>
+                <th style="width: 110px">Type</th>
+                <th style="width: 90px">Nullable</th>
+                <th style="width: 100px">Completeness</th>
+                <th>Sample Data (diverse examples)</th>
             </tr>
 `;
 
@@ -162,31 +166,68 @@ async function generateSchemaReport() {
         const columnType = col.data_type;
         const isNullable = col.is_nullable === 'YES';
 
-        // Find first non-null value for this column across ALL records
-        let sampleDisplay = '<span class="null-value">No data</span>';
+        // Calculate data completeness percentage
+        let completenessPercent = 0;
+        let completenessDisplay = '<span class="null-value">0%</span>';
 
         if (rowCount > 0) {
           try {
-            const sampleResult = await db.query(`
-              SELECT "${columnName}" as value
+            const nonNullResult = await db.query(`
+              SELECT COUNT(*) as count
               FROM ${table.name}
               WHERE "${columnName}" IS NOT NULL
-              LIMIT 1
+            `);
+            const nonNullCount = Number(nonNullResult[0].count);
+            completenessPercent = Math.round((nonNullCount / rowCount) * 100);
+
+            // Color code completeness
+            let completenessClass = 'completeness-low';
+            if (completenessPercent >= 80) completenessClass = 'completeness-high';
+            else if (completenessPercent >= 50) completenessClass = 'completeness-medium';
+
+            completenessDisplay = `<span class="${completenessClass}">${completenessPercent}%</span>`;
+          } catch (err) {
+            // Keep default 0%
+          }
+        }
+
+        // Find multiple diverse sample values (up to 3)
+        let sampleDisplay = '<span class="null-value">No data</span>';
+
+        if (rowCount > 0 && completenessPercent > 0) {
+          try {
+            const sampleResult = await db.query(`
+              SELECT DISTINCT "${columnName}" as value
+              FROM ${table.name}
+              WHERE "${columnName}" IS NOT NULL
+              LIMIT 3
             `);
 
             if (sampleResult.length > 0) {
-              const value = sampleResult[0].value;
+              const sampleValues: string[] = [];
 
-              if (value !== null && value !== undefined) {
-                if (typeof value === 'boolean') {
-                  sampleDisplay = value ? 'TRUE' : 'FALSE';
-                } else if (value instanceof Date) {
-                  sampleDisplay = value.toISOString();
-                } else {
-                  const strValue = String(value);
-                  // Truncate long values
-                  sampleDisplay = strValue.length > 120 ? strValue.substring(0, 120) + '...' : strValue;
+              for (const row of sampleResult) {
+                const value = row.value;
+
+                if (value !== null && value !== undefined) {
+                  let displayValue = '';
+
+                  if (typeof value === 'boolean') {
+                    displayValue = value ? 'TRUE' : 'FALSE';
+                  } else if (value instanceof Date) {
+                    displayValue = value.toISOString().split('T')[0]; // Just date part
+                  } else {
+                    const strValue = String(value);
+                    // Truncate long values
+                    displayValue = strValue.length > 80 ? strValue.substring(0, 80) + '...' : strValue;
+                  }
+
+                  sampleValues.push(displayValue);
                 }
+              }
+
+              if (sampleValues.length > 0) {
+                sampleDisplay = sampleValues.join('<br>');
               }
             }
           } catch (err) {
@@ -203,6 +244,7 @@ async function generateSchemaReport() {
                 <td>${description}</td>
                 <td><span class="column-type">${columnType}</span></td>
                 <td><span class="${isNullable ? 'nullable-yes' : 'nullable-no'}">${isNullable ? 'NULL' : 'NOT NULL'}</span></td>
+                <td style="text-align: center; font-weight: 600;">${completenessDisplay}</td>
                 <td class="sample-data">${sampleDisplay}</td>
             </tr>
 `;

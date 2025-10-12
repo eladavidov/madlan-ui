@@ -308,9 +308,17 @@ npm run analyze          # Run DuckDB analytics
 
 **📚 MASTER DOCUMENT**: See **`Crawler/PROJECT-PLAN.md`** - **START HERE**
 
-**Current Status**: ✅ **PRODUCTION READY** - All Phase 5B Extractors Fixed and Verified
+**Current Status**: ✅ **PRODUCTION READY** - All Field Extractors Fixed + Database Cleaned
 **Breakthrough Date**: 2025-10-09 - **Anti-blocking solved with 100% success rate!**
-**Latest Update**: 2025-10-12 - **Construction Projects Extractor Fixed** - ALL 7 data sections now working!
+**Latest Update**: 2025-10-12 (Afternoon) - **ALL 9 Target Fields Working (100%)** + Database Ready for Production
+
+**Today's Accomplishments (2025-10-12 Afternoon)**:
+1. ✅ **Fixed price_per_sqm extraction** - Added calculation fallback (price / size) when label not found
+2. ✅ **Added property type filter** - Excludes construction company URLs (`/projects/`) from crawl
+3. ✅ **Verified all 9 target fields** working correctly:
+   - price, price_per_sqm, entry_date, listing_date, expected_yield, latitude, longitude, contact_name, contact_phone
+4. ✅ **Database cleaned** - Ready for production crawl
+5. ✅ **Files modified**: `src/extractors/propertyExtractor.ts` (line 40-43), `src/crawlers/router.ts` (line 21-23)
 
 **🎉 Major Achievement - Anti-Blocking Solution**:
 - **Solution**: Fresh browser per property with random delays (60-120s) + HEADLESS=false
