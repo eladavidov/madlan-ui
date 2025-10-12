@@ -15,6 +15,7 @@ import { config } from "../utils/config.js";
 export interface IntegratedCrawlerOptions {
   city?: string;
   maxSearchPages?: number;
+  startPage?: number;
   maxProperties?: number;
   searchUrl?: string;
   dbPath?: string;
@@ -43,6 +44,7 @@ export async function runFullCrawl(
   const {
     city = config.target.city,
     maxSearchPages = 5,
+    startPage = 1,
     maxProperties = config.target.maxProperties,
     searchUrl,
     dbPath = config.database.path,
@@ -53,7 +55,14 @@ export async function runFullCrawl(
 
   const sessionId = `crawl-${Date.now()}`;
   // Use config template for correct URL format
-  const actualSearchUrl = searchUrl || config.target.searchUrlTemplate.replace("{city}", encodeURIComponent(city));
+  let actualSearchUrl = searchUrl || config.target.searchUrlTemplate.replace("{city}", encodeURIComponent(city));
+
+  // Add page parameter if starting from page > 1
+  if (startPage > 1) {
+    const url = new URL(actualSearchUrl);
+    url.searchParams.set('page', startPage.toString());
+    actualSearchUrl = url.toString();
+  }
 
   logger.info("=" .repeat(60));
   logger.info("🕷️  Starting Integrated Crawl");
@@ -61,7 +70,7 @@ export async function runFullCrawl(
   logger.info(`Session ID: ${sessionId}`);
   logger.info(`Target City: ${city}`);
   logger.info(`Search URL: ${actualSearchUrl}`);
-  logger.info(`Max Search Pages: ${maxSearchPages}`);
+  logger.info(`Max Search Pages: ${maxSearchPages} (starting from page ${startPage})`);
   logger.info(`Max Properties: ${maxProperties}`);
   logger.info("=" .repeat(60));
 
@@ -82,12 +91,28 @@ export async function runFullCrawl(
     logger.info("\n📋 Phase 1: Crawling search results...");
     const propertyUrls = await crawlSearchResults(actualSearchUrl, {
       maxPages: maxSearchPages,
+      startPage: startPage,
       onPropertiesFound: (urls) => {
         logger.info(`  → Batch: ${urls.length} property URLs extracted`);
       },
     });
 
     logger.info(`\n✅ Search complete: ${propertyUrls.length} property URLs found`);
+
+    // Post-crawl validation: Check if actual count matches expected
+    const expectedPropertiesPerPage = 34; // Typical Madlan search results per page
+    const expectedTotal = maxSearchPages * expectedPropertiesPerPage;
+    const actualTotal = propertyUrls.length;
+
+    if (actualTotal < expectedTotal * 0.8) {
+      // Warn if we got less than 80% of expected properties
+      logger.warn(`⚠️  Post-Crawl Validation Warning:`);
+      logger.warn(`   Expected ~${expectedTotal} properties (${maxSearchPages} pages × ~${expectedPropertiesPerPage}/page)`);
+      logger.warn(`   Actually found ${actualTotal} properties`);
+      logger.warn(`   This may indicate pagination issues or blocking`);
+    } else {
+      logger.info(`   ✅ Property count validated: ${actualTotal} properties from ${maxSearchPages} pages`);
+    }
 
     // Limit to maxProperties
     const urlsToProcess = propertyUrls.slice(0, maxProperties);

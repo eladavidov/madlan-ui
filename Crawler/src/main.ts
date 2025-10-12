@@ -39,6 +39,7 @@ async function main() {
       const summary = await runFullCrawl({
         city: options.city,
         maxSearchPages: options.maxPages,
+        startPage: options.startPage,
         maxProperties: options.maxProperties,
         downloadImages: !options.noImages,
       });
@@ -62,6 +63,7 @@ async function main() {
         await runFullCrawl({
           searchUrl: searchUrls[0],
           maxSearchPages: options.maxPages,
+          startPage: options.startPage,
           maxProperties: options.maxProperties,
         });
         console.log("\n✅ Search crawl completed successfully!");
@@ -90,6 +92,7 @@ function parseArgs(args: string[]): {
   help: boolean;
   city?: string;
   maxPages?: number;
+  startPage?: number;
   maxProperties?: number;
   noImages: boolean;
   urls: string[];
@@ -98,6 +101,7 @@ function parseArgs(args: string[]): {
     help: false,
     city: undefined as string | undefined,
     maxPages: undefined as number | undefined,
+    startPage: undefined as number | undefined,
     maxProperties: undefined as number | undefined,
     noImages: false,
     urls: [] as string[],
@@ -112,6 +116,8 @@ function parseArgs(args: string[]): {
       options.city = args[++i];
     } else if (arg === "--max-pages" && i + 1 < args.length) {
       options.maxPages = parseInt(args[++i], 10);
+    } else if (arg === "--start-page" && i + 1 < args.length) {
+      options.startPage = parseInt(args[++i], 10);
     } else if (arg === "--max-properties" && i + 1 < args.length) {
       options.maxProperties = parseInt(args[++i], 10);
     } else if (arg === "--no-images") {
@@ -141,6 +147,7 @@ function showHelp() {
   console.log("Options:");
   console.log("  --city <city>              Target city (default: חיפה)");
   console.log("  --max-pages <n>            Max search pages (default: 5)");
+  console.log("  --start-page <n>           Resume from page N (default: 1)");
   console.log("  --max-properties <n>       Max properties to crawl (default: 100)");
   console.log("  --no-images                Skip image downloads (property data only)");
   console.log("  --help, -h                 Show this help");

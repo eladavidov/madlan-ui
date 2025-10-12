@@ -29,6 +29,7 @@ chromium.use(StealthPlugin());
 
 export interface SearchCrawlerOptions {
   maxPages?: number;
+  startPage?: number;
   onPropertiesFound?: (urls: string[]) => void | Promise<void>;
 }
 
@@ -36,7 +37,7 @@ export interface SearchCrawlerOptions {
  * Create search results crawler
  */
 export function createSearchCrawler(options: SearchCrawlerOptions = {}): PlaywrightCrawler {
-  const { maxPages = 10, onPropertiesFound } = options;
+  const { maxPages = 10, startPage = 1, onPropertiesFound } = options;
   let pagesProcessed = 0;
   const allPropertyUrls: string[] = [];
 
@@ -124,176 +125,182 @@ export function createSearchCrawler(options: SearchCrawlerOptions = {}): Playwri
       });
 
       try {
-        // QUALITY-FIRST APPROACH: Robust waiting for React/SPA content
+        // PAGINATION LOOP: Process all pages in one request handler
+        while (pagesProcessed < maxPages) {
+          // Calculate current page number based on start page and pages processed
+          const currentPageNum = startPage + pagesProcessed;
 
-        // Step 1: Wait for initial DOM
-        await page.waitForLoadState("domcontentloaded");
+          // QUALITY-FIRST APPROACH: Robust waiting for React/SPA content
 
-        // Step 2: Close the "מה חסר לך במדלן?" popup if it appears
-        try {
-          // Wait for the "אחר-כך" (later) button and click it
-          const laterButton = page.locator('text=אחר-כך');
-          await laterButton.waitFor({ timeout: 5000 });
-          await laterButton.click();
-          logger.info("✅ Closed 'What's missing' popup");
-          await page.waitForTimeout(1000);
-        } catch (e) {
-          logger.debug("No popup to close or already closed");
-        }
+          // Step 1: Wait for initial DOM
+          await page.waitForLoadState("domcontentloaded");
 
-        // Step 3: Wait for network to be mostly idle
-        try {
-          await page.waitForLoadState("networkidle", { timeout: 15000 });
-        } catch (e) {
-          log.debug("Network idle timeout, continuing...");
-        }
-
-        // Step 3: Wait for React to mount and render (quality-first approach)
-        // Check if JavaScript is actually running by looking for actual content
-        try {
-          await page.waitForFunction(
-            () => {
-              // Better detection: Check for actual React root content
-              const hasPropertyCards = document.querySelector('[class*="property"]') !== null ||
-                                      document.querySelector('[class*="listing"]') !== null ||
-                                      document.querySelector('img') !== null;
-              const bodyLength = document.body.textContent?.length || 0;
-              // Page is rendered if we have substantial content AND React elements
-              return bodyLength > 5000 || hasPropertyCards;
-            },
-            { timeout: 20000 }
-          );
-          logger.debug("✅ React content detected, page fully rendered");
-        } catch (e) {
-          logger.warn("⚠️  Content not fully rendered, proceeding anyway");
-        }
-
-        // Step 4: Additional wait for any lazy-loaded content
-        await page.waitForTimeout(2000);
-
-        // Simulate human behavior AFTER content loads
-        await simulateHumanBehavior(page);
-
-        // Check for CAPTCHA and other blocking signals
-        const captchaDetected = await page
-          .locator('text="Press & Hold"')
-          .count()
-          .then((count) => count > 0);
-
-        // Also check for other blocking indicators
-        const pageContent = await page.content();
-
-        // Quality-first debugging: Check page state and take screenshots if needed
-        const pageTitle = await page.title();
-        const bodyText = await page.locator("body").textContent();
-        const firstWords = bodyText?.substring(0, 200) || "";
-
-        logger.debug(`Page title: "${pageTitle}"`);
-        logger.debug(`Page has blocking text: ${pageContent.includes("סליחה על ההפרעה")}`);
-        logger.debug(`CAPTCHA button found: ${captchaDetected}`);
-        logger.debug(`First 200 chars of page: "${firstWords.substring(0, 200)}"`);
-
-        // Take screenshot if JavaScript not running (for debugging)
-        await screenshotIfJavaScriptDisabled(page);
-
-        const isBlocked =
-          captchaDetected ||
-          pageContent.includes("access denied") ||
-          pageContent.includes("rate limit") ||
-          pageContent.includes("too many requests") ||
-          pageContent.includes("סליחה על ההפרעה"); // Hebrew: "Sorry for the interruption"
-
-        if (isBlocked) {
-          // Quality-first: Take screenshot with HTML for debugging
-          await screenshotWithHtml(page, "search-page-blocked");
-
-          if (captchaDetected) {
-            logger.warn(`🛑 CAPTCHA detected on search page: ${url}`);
-          } else {
-            logger.warn(`🛑 Blocking detected on search page: ${url} (rate limit or access denied)`);
+          // Step 2: Close the "מה חסר לך במדלן?" popup if it appears
+          try {
+            // Wait for the "אחר-כך" (later) button and click it
+            const laterButton = page.locator('text=אחר-כך');
+            await laterButton.waitFor({ timeout: 5000 });
+            await laterButton.click();
+            logger.info("✅ Closed 'What's missing' popup");
+            await page.waitForTimeout(1000);
+          } catch (e) {
+            logger.debug("No popup to close or already closed");
           }
-          logger.warn(`⚠️  Cannot continue search - blocking on search pages requires manual intervention`);
-          logger.warn(`💡 Try reducing CONCURRENCY and MAX_REQUESTS_PER_MINUTE in .env`);
-          return;
-        }
 
-        // Log captured API data for debugging
-        logger.info(`📊 Captured ${capturedData.rawResponses.length} API responses`);
+          // Step 3: Wait for network to be mostly idle
+          try {
+            await page.waitForLoadState("networkidle", { timeout: 15000 });
+          } catch (e) {
+            log.debug("Network idle timeout, continuing...");
+          }
 
-        // Try to extract from captured API data first
-        let propertyUrls: string[] = [];
+          // Step 3: Wait for React to mount and render (quality-first approach)
+          // Check if JavaScript is actually running by looking for actual content
+          try {
+            await page.waitForFunction(
+              () => {
+                // Better detection: Check for actual React root content
+                const hasPropertyCards = document.querySelector('[class*="property"]') !== null ||
+                                        document.querySelector('[class*="listing"]') !== null ||
+                                        document.querySelector('img') !== null;
+                const bodyLength = document.body.textContent?.length || 0;
+                // Page is rendered if we have substantial content AND React elements
+                return bodyLength > 5000 || hasPropertyCards;
+              },
+              { timeout: 20000 }
+            );
+            logger.debug("✅ React content detected, page fully rendered");
+          } catch (e) {
+            logger.warn("⚠️  Content not fully rendered, proceeding anyway");
+          }
 
-        if (capturedData.rawResponses.length > 0) {
-          logger.info("✅ Using API data (bypassing HTML extraction)");
+          // Step 4: Additional wait for any lazy-loaded content
+          await page.waitForTimeout(2000);
 
-          // Log first response for debugging
-          logger.debug(`Sample API response: ${JSON.stringify(capturedData.rawResponses[0]?.data).substring(0, 500)}`);
+          // Simulate human behavior AFTER content loads
+          await simulateHumanBehavior(page);
 
-          // Extract property URLs from API responses
-          // TODO: Parse actual API structure once we see the data
-          const apiProperties = extractPropertiesFromApiResponses(capturedData);
-          logger.info(`Found ${apiProperties.length} properties in API responses`);
+          // Check for CAPTCHA and other blocking signals
+          const captchaDetected = await page
+            .locator('text="Press & Hold"')
+            .count()
+            .then((count) => count > 0);
 
-          // Convert to URLs (structure TBD)
-          propertyUrls = apiProperties.map((p: any) => {
-            // Try common property ID fields
-            const id = p.id || p.property_id || p.listing_id || p._id;
-            if (id) {
-              return `https://www.madlan.co.il/listings/${id}`;
+          // Also check for other blocking indicators
+          const pageContent = await page.content();
+
+          // Quality-first debugging: Check page state and take screenshots if needed
+          const pageTitle = await page.title();
+          const bodyText = await page.locator("body").textContent();
+          const firstWords = bodyText?.substring(0, 200) || "";
+
+          logger.debug(`Page title: "${pageTitle}"`);
+          logger.debug(`Page has blocking text: ${pageContent.includes("סליחה על ההפרעה")}`);
+          logger.debug(`CAPTCHA button found: ${captchaDetected}`);
+          logger.debug(`First 200 chars of page: "${firstWords.substring(0, 200)}"`);
+
+          // Take screenshot if JavaScript not running (for debugging)
+          await screenshotIfJavaScriptDisabled(page);
+
+          const isBlocked =
+            captchaDetected ||
+            pageContent.includes("access denied") ||
+            pageContent.includes("rate limit") ||
+            pageContent.includes("too many requests") ||
+            pageContent.includes("סליחה על ההפרעה"); // Hebrew: "Sorry for the interruption"
+
+          if (isBlocked) {
+            // Quality-first: Take screenshot with HTML for debugging
+            await screenshotWithHtml(page, "search-page-blocked");
+
+            if (captchaDetected) {
+              logger.warn(`🛑 CAPTCHA detected on search page: ${url}`);
+            } else {
+              logger.warn(`🛑 Blocking detected on search page: ${url} (rate limit or access denied)`);
             }
-            return null;
-          }).filter(Boolean) as string[];
-        }
-
-        // Fallback to HTML extraction if API didn't work
-        if (propertyUrls.length === 0) {
-          logger.warn("⚠️ No properties from API, trying HTML extraction");
-          propertyUrls = await extractPropertyUrls(page);
-        }
-
-        logger.info(`Extracted ${propertyUrls.length} property URLs from page ${pagesProcessed + 1}`);
-
-        if (propertyUrls.length > 0) {
-          allPropertyUrls.push(...propertyUrls);
-
-          // Call callback if provided
-          if (onPropertiesFound) {
-            await onPropertiesFound(propertyUrls);
+            logger.warn(`⚠️  Cannot continue search - blocking on search pages requires manual intervention`);
+            logger.warn(`💡 Try reducing CONCURRENCY and MAX_REQUESTS_PER_MINUTE in .env`);
+            break; // Exit pagination loop
           }
-        }
 
-        pagesProcessed++;
+          // Log captured API data for debugging
+          logger.info(`📊 Captured ${capturedData.rawResponses.length} API responses`);
 
-        // Check if we should continue to next page
-        if (pagesProcessed >= maxPages) {
-          logger.info(`Reached max pages limit (${maxPages})`);
-          return;
-        }
+          // Try to extract from captured API data first
+          let propertyUrls: string[] = [];
 
-        // Check for next page
-        const hasNext = await hasNextPage(page);
-        if (!hasNext) {
-          logger.info("No more pages available");
-          return;
-        }
+          if (capturedData.rawResponses.length > 0) {
+            logger.info("✅ Using API data (bypassing HTML extraction)");
 
-        // Navigate to next page
-        logger.info("Navigating to next page...");
-        const success = await goToNextPage(page);
+            // Log first response for debugging
+            logger.debug(`Sample API response: ${JSON.stringify(capturedData.rawResponses[0]?.data).substring(0, 500)}`);
 
-        if (success) {
+            // Extract property URLs from API responses
+            // TODO: Parse actual API structure once we see the data
+            const apiProperties = extractPropertiesFromApiResponses(capturedData);
+            logger.info(`Found ${apiProperties.length} properties in API responses`);
+
+            // Convert to URLs (structure TBD)
+            propertyUrls = apiProperties.map((p: any) => {
+              // Try common property ID fields
+              const id = p.id || p.property_id || p.listing_id || p._id;
+              if (id) {
+                return `https://www.madlan.co.il/listings/${id}`;
+              }
+              return null;
+            }).filter(Boolean) as string[];
+          }
+
+          // Fallback to HTML extraction if API didn't work
+          if (propertyUrls.length === 0) {
+            logger.warn("⚠️ No properties from API, trying HTML extraction");
+            propertyUrls = await extractPropertyUrls(page);
+          }
+
+          logger.info(`Extracted ${propertyUrls.length} property URLs from page ${currentPageNum}`);
+          logger.info(`  → Batch: ${propertyUrls.length} property URLs extracted`);
+
+          if (propertyUrls.length > 0) {
+            allPropertyUrls.push(...propertyUrls);
+
+            // Call callback if provided
+            if (onPropertiesFound) {
+              await onPropertiesFound(propertyUrls);
+            }
+          }
+
+          pagesProcessed++;
+
+          // Check if we should continue to next page
+          if (pagesProcessed >= maxPages) {
+            logger.info(`Reached max pages limit (${maxPages})`);
+            break; // Exit pagination loop
+          }
+
+          // Check for next page
+          const hasNext = await hasNextPage(page, pagesProcessed, maxPages);
+          if (!hasNext) {
+            logger.info("No more pages available");
+            break; // Exit pagination loop
+          }
+
+          // Navigate to next page (page numbers start at 1, but first page has no ?page= param)
+          const nextPageNum = currentPageNum + 1; // Next page number based on current
+          logger.info(`Navigating to page ${nextPageNum}...`);
+          const success = await goToNextPage(page, nextPageNum);
+
+          if (!success) {
+            logger.warn("Failed to navigate to next page");
+            break; // Exit pagination loop
+          }
+
           // Random delay before processing next page
           await randomDelay({
             min: config.crawler.requestDelayMin,
             max: config.crawler.requestDelayMax,
           });
 
-          // Re-queue current page to process next page of results
-          // (since pagination might be in-place, same URL)
-          // In production, we'd handle this differently
-          logger.info("Next page loaded");
-        } else {
-          logger.warn("Failed to navigate to next page");
+          logger.info(`Page ${pagesProcessed + 1} loaded, continuing...`);
         }
       } catch (error: any) {
         logger.error(`Error processing search page ${url}:`, error);

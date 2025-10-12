@@ -1,8 +1,8 @@
 i# Madlan Crawler - Project Status
 
-**Status**: 🔄 **PRODUCTION CRAWL IN PROGRESS - Step 1 (50 Properties)**
-**Last Updated**: 2025-10-12 (Late Afternoon)
-**Version**: Phase 5B Complete - All Field Extractors Fixed + Production Testing
+**Status**: ✅ **READY FOR PRODUCTION CRAWL - All Fixes Complete**
+**Last Updated**: 2025-10-12 (Evening)
+**Version**: Phase 5B Complete + Pagination & Resume Fixes
 
 ---
 
@@ -14,21 +14,24 @@ i# Madlan Crawler - Project Status
 - **Target**: 50 properties (max-properties 50, max-pages 1)
 - **Result**: 34/34 properties (100% success rate)
 - **Time**: 67 minutes (1h 7m)
-- **Database**: 36 properties total + all Phase 5B data
+- **Database**: 37 properties total + all Phase 5B data
 
-### 🔄 Production Crawl - Step 2 (IN PROGRESS)
+### ⏸️  Production Crawl - Step 2 (PAUSED - Fixed pagination bug)
 
-**Current Run**:
-- **Target**: 200 properties (max-properties 200, max-pages 6)
-- **Command**: `cd Crawler && export BROWSER_LAUNCH_DELAY_MIN=60000 && export BROWSER_LAUNCH_DELAY_MAX=120000 && node dist/main.js --city חיפה --max-properties 200 --max-pages 6 --no-images`
-- **Started**: 2025-10-12 (Late Afternoon)
-- **Database**: Will update/add to existing 36 properties
-- **Anti-blocking**: Production delays (60-120s between properties)
+**Previous Attempt**:
+- **Target**: 200 properties (6 pages)
+- **Result**: Only crawled 1 page (34 properties) due to pagination bug
+- **Issue Identified**: Search crawler stopped after first page
 
-**After Completion**:
-- Verify database with `npx tsx verify-database.ts`
-- If success rate ≥ 80%: Proceed to Step 3 (500 properties)
-- If success rate < 80%: Investigate issues before scaling up
+**Fixes Implemented (2025-10-12 Evening)**:
+1. ✅ **Pagination Bug** - Changed from button-based to URL-based pagination (`?page=N`)
+2. ✅ **Resume Mechanism** - Added `--start-page` parameter to resume from any page
+3. ✅ **Post-Crawl Validation** - Warns if property count < 80% of expected
+4. ✅ **Repository Cleanup** - Cleaned logs/, storage/, moved test files
+
+**Ready to Resume**:
+- Database cleaned and ready (37 unique properties)
+- Use `--start-page 2 --max-pages 5` to continue from page 2 (since page 1 was already crawled)
 
 **Progress Monitoring Format**:
 Type "status" for compact updates in this format:
@@ -234,6 +237,26 @@ Based on 9-property test:
 ---
 
 ## 🔧 RECENT FIXES (2025-10-11 to 2025-10-12)
+
+### 2025-10-12 (Evening): Pagination Bug Fix + Resume Mechanism + Cleanup
+- **Problem**: Step 2 crawl only extracted 1 page instead of 6 pages
+- **Root Cause**: Pagination logic stopped after first page (selectors were preliminary, didn't work)
+- **Solutions Implemented**:
+  1. **URL-Based Pagination** - Changed from button click to URL manipulation (`?page=N`)
+     - Files: `searchCrawler.ts` (line 128-300), `searchExtractor.ts` (goToNextPage, hasNextPage)
+     - Test: 2-page test successfully extracted 68 properties (34 × 2)
+  2. **Resume Mechanism** - Added `--start-page` parameter to CLI
+     - Files: `main.ts` (parseArgs), `integratedCrawler.ts`, `searchCrawler.ts`
+     - Usage: `--start-page 2` resumes from page 2
+     - URL construction: Automatically adds `?page=N` to search URL if startPage > 1
+  3. **Post-Crawl Validation** - Warns if property count < 80% expected
+     - File: `integratedCrawler.ts` (line 102-115)
+     - Calculates: expectedTotal = maxPages × 34 properties/page
+  4. **Repository Cleanup**
+     - Deleted nul file, moved test files to tests/ directory
+     - Cleaned logs/ and storage/ directories
+- **Database Status**: 37 properties (ready for resume from page 2)
+- **Next Action**: Resume Step 2 with `--start-page 2 --max-pages 5`
 
 ### 2025-10-12 (Afternoon): Final Field Fixes + Validation Testing
 - **Problem**: price_per_sqm field missing, construction URLs being crawled
@@ -449,9 +472,9 @@ When starting a new session:
 
 ---
 
-**Last Updated**: 2025-10-12 (Late Afternoon)
-**Status**: 🔄 PRODUCTION CRAWL IN PROGRESS - Step 2 (200 Properties) - **RUNNING**
+**Last Updated**: 2025-10-12 (Evening)
+**Status**: ✅ READY FOR PRODUCTION CRAWL - All Fixes Complete
 **Step 1 Result**: ✅ Complete - 34/34 properties (100% success, 67 minutes)
-**Current Run**: Step 2 - 200-property batch (6 pages) with production delays (60-120s)
-**Database**: 36 properties + Phase 5B data (upsert mode - existing properties will update)
-**Monitoring**: Type "status" for compact progress updates
+**Step 2**: ⏸️  Paused - Pagination bug fixed, ready to resume from page 2
+**Database**: 37 properties + Phase 5B data (cleaned and ready)
+**Next Action**: Resume Step 2 with `--start-page 2 --max-pages 5` to complete 200-property batch

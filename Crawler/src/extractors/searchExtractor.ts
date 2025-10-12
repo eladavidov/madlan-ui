@@ -48,52 +48,31 @@ export async function extractPropertyUrls(page: Page): Promise<string[]> {
 
 /**
  * Check if there's a next page (pagination)
+ * Note: Madlan uses URL-based pagination, not buttons
  */
-export async function hasNextPage(page: Page): Promise<boolean> {
-  try {
-    // Try to find "next" button
-    const nextButton = await page.$(SEARCH_RESULTS_SELECTORS.pagination.nextButton);
-    if (nextButton) {
-      const isDisabled = await nextButton.evaluate((el) => {
-        return el.hasAttribute("disabled") || el.classList.contains("disabled");
-      });
-      return !isDisabled;
-    }
-
-    // Try to find "load more" button
-    const loadMoreButton = await page.$(SEARCH_RESULTS_SELECTORS.pagination.loadMore);
-    if (loadMoreButton) {
-      return await loadMoreButton.isVisible();
-    }
-
-    return false;
-  } catch (error) {
-    return false;
-  }
+export async function hasNextPage(_page: Page, currentPageNum: number, maxPages: number): Promise<boolean> {
+  // Simple check: if we haven't reached maxPages, there are more pages
+  // Madlan has 3600+ properties in Haifa, so we can safely assume pages exist
+  return currentPageNum < maxPages;
 }
 
 /**
- * Navigate to next page
+ * Navigate to next page using URL manipulation
+ * Madlan uses ?page=N query parameter for pagination
  */
-export async function goToNextPage(page: Page): Promise<boolean> {
+export async function goToNextPage(page: Page, nextPageNum: number): Promise<boolean> {
   try {
-    // Try clicking "next" button
-    const nextButton = await page.$(SEARCH_RESULTS_SELECTORS.pagination.nextButton);
-    if (nextButton) {
-      await nextButton.click();
-      await page.waitForLoadState("domcontentloaded");
-      return true;
-    }
+    const currentUrl = page.url();
+    const url = new URL(currentUrl);
 
-    // Try clicking "load more" button
-    const loadMoreButton = await page.$(SEARCH_RESULTS_SELECTORS.pagination.loadMore);
-    if (loadMoreButton) {
-      await loadMoreButton.click();
-      await page.waitForTimeout(2000); // Wait for new items to load
-      return true;
-    }
+    // Add or update page parameter
+    url.searchParams.set('page', nextPageNum.toString());
 
-    return false;
+    const nextUrl = url.toString();
+    console.log(`Navigating to page ${nextPageNum}: ${nextUrl}`);
+
+    await page.goto(nextUrl, { waitUntil: 'domcontentloaded' });
+    return true;
   } catch (error) {
     console.error("Error navigating to next page:", error);
     return false;
