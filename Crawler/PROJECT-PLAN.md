@@ -1,8 +1,8 @@
 i# Madlan Crawler - Project Status
 
-**Status**: ✅ **READY FOR PRODUCTION CRAWL - All Fixes Complete**
-**Last Updated**: 2025-10-12 (Evening)
-**Version**: Phase 5B Complete + Pagination & Resume Fixes
+**Status**: ✅ **READY FOR PRODUCTION CRAWL - Pagination Fixed!**
+**Last Updated**: 2025-10-13 (Afternoon)
+**Version**: Phase 5B Complete + Pagination Fixed (Fresh Browser Per Page)
 
 ---
 
@@ -16,22 +16,25 @@ i# Madlan Crawler - Project Status
 - **Time**: 67 minutes (1h 7m)
 - **Database**: 37 properties total + all Phase 5B data
 
-### ⏸️  Production Crawl - Step 2 (PAUSED - Fixed pagination bug)
+### ✅ Production Crawl - Step 2 (READY - Pagination Fixed!)
 
-**Previous Attempt**:
-- **Target**: 200 properties (6 pages)
-- **Result**: Only crawled 1 page (34 properties) due to pagination bug
-- **Issue Identified**: Search crawler stopped after first page
+**Pagination Fix Complete (2025-10-13)**:
+- ✅ **Problem Solved**: Fresh browser per search page strategy
+- ✅ **Test Results**: 3 pages crawled, 102 URLs extracted, 0% blocking
+- ✅ **Anti-Blocking**: Each page gets fresh browser + 60-120s delays
+- ✅ **Validation**: Tested with 60-120s delays between pages
 
-**Fixes Implemented (2025-10-12 Evening)**:
-1. ✅ **Pagination Bug** - Changed from button-based to URL-based pagination (`?page=N`)
-2. ✅ **Resume Mechanism** - Added `--start-page` parameter to resume from any page
-3. ✅ **Post-Crawl Validation** - Warns if property count < 80% of expected
-4. ✅ **Repository Cleanup** - Cleaned logs/, storage/, moved test files
+**Test Results (2025-10-13)**:
+- **Page 1**: 34 URLs (✅ success, no blocking)
+- **Page 2**: 34 URLs (✅ success, 75s delay, no blocking)
+- **Page 3**: 34 URLs (✅ success, 99s delay, no blocking)
+- **Total**: 102 URLs in 4m 46s
+- **Success Rate**: 100% (0 blocked pages)
 
 **Ready to Resume**:
-- Database cleaned and ready (37 unique properties)
-- Use `--start-page 2 --max-pages 5` to continue from page 2 (since page 1 was already crawled)
+- Database restored with 37 properties from Step 1
+- Pagination working with fresh browser per page
+- Can now safely run Step 2: 6 pages = ~200 properties
 
 **Progress Monitoring Format**:
 Type "status" for compact updates in this format:
@@ -51,65 +54,6 @@ Rate: ~X.X properties/min | ETA: ~X hours
 - Success rate: 80-90% (with production delays)
 - Time: ~6-7 hours
 - All Phase 5B extractors working (transactions, schools, ratings, price comparisons, construction projects)
-
----
-
-### Latest Test Results (2025-10-12 Mid-Afternoon)
-
-**✅ 7-Property Validation Test Complete**
-
-Test Results (with 0 delays - aggressive test):
-- **Success Rate**: 5/7 properties (71%)
-- **Blocked**: 2/7 properties (28% - expected without delays)
-- **All 9 Target Fields**: ✅ Working on all successful properties
-- **Phase 5B Data**: ✅ Extracting successfully (transactions, schools, ratings, price comparisons)
-
-**Key Findings**:
-1. ✅ **price_per_sqm calculation** - Working (calculates from price/size when not directly available)
-2. ✅ **Property type filter** - Working (excludes construction company URLs `/projects/`)
-3. ✅ **All 9 fields verified** working on successful properties:
-   - price, price_per_sqm (calculated), entry_date, listing_date
-   - expected_yield, latitude, longitude, contact_name, contact_phone
-4. ⚠️ **Blocking without delays**: 28% blocking rate confirms need for production delays (60-120s)
-5. ⚠️ **Construction projects**: Returning 0 results (may be data availability issue, not a bug)
-
-**Files Modified**:
-- `src/extractors/propertyExtractor.ts` - Added price_per_sqm calculation fallback (line 40-43)
-- `src/crawlers/router.ts` - Added `/projects/` URL filter (line 21-23)
-
-**Database Status**: Multiple test runs completed, ready for production crawl
-
----
-
-### Production Readiness: ✅ VERIFIED
-
-**All Systems Working**:
-- ✅ Anti-blocking strategy (60-120s delays, fresh browser per property)
-- ✅ Property extraction (38 fields + 11 amenities)
-- ✅ **ALL 7 enhanced data sections verified**:
-  - Properties (9 properties)
-  - Transaction history (79 records)
-  - Schools (37 records)
-  - Neighborhood ratings (9 records)
-  - Price comparisons (14 records)
-  - **Construction projects (70 records)** ← Latest fix (2025-10-12)
-  - Crawl sessions/errors (tracking working)
-
-**Latest Achievement (2025-10-12)**:
-- **Construction Projects Extractor Fixed** - Complete rewrite
-  - Problem: Was returning 0 results
-  - Root cause: Looking in wrong section ("בניה חדשה" is often empty)
-  - Solution: Extract from "פרויקטים חדשים בסביבה" project link cards
-  - Result: **70 projects extracted** from 9 properties (avg 7.8 per property)
-
-### Database Report
-
-**Enhanced Schema Report**: [file:///C:/Src/Madlan/Crawler/tests/schema-report-with-data.html](file:///C:/Src/Madlan/Crawler/tests/schema-report-with-data.html)
-
-**Summary**:
-- 9 tables, 126 columns, 222 total rows
-- 8/9 tables have data (property_images empty due to --no-images flag)
-- **New Features**: Data completeness % + multiple sample values per column
 
 ---
 
@@ -180,8 +124,9 @@ npx tsx src/scripts/generate-schema-report.ts
 ## 📊 KEY METRICS
 
 ### Anti-Blocking Performance
-- **Strategy**: Fresh browser per property + 60-120s random delays
-- **Validated Success Rate**: 100% (20-property test, zero blocking)
+- **Strategy**: Fresh browser per search page + fresh browser per property + 60-120s random delays
+- **Search Pagination Success**: 100% (3-page test, zero blocking)
+- **Property Crawling Success**: 100% (34-property test, zero blocking)
 - **Headless Mode**: HEADLESS=false required (bypasses PerimeterX detection)
 - **Speed**: ~0.4-0.7 properties/minute with production delays
 
@@ -236,120 +181,19 @@ Based on 9-property test:
 
 ---
 
-## 🔧 RECENT FIXES (2025-10-11 to 2025-10-12)
+## 🔧 LATEST FIX (2025-10-13)
 
-### 2025-10-12 (Evening): Pagination Bug Fix + Resume Mechanism + Cleanup
-- **Problem**: Step 2 crawl only extracted 1 page instead of 6 pages
-- **Root Cause**: Pagination logic stopped after first page (selectors were preliminary, didn't work)
-- **Solutions Implemented**:
-  1. **URL-Based Pagination** - Changed from button click to URL manipulation (`?page=N`)
-     - Files: `searchCrawler.ts` (line 128-300), `searchExtractor.ts` (goToNextPage, hasNextPage)
-     - Test: 2-page test successfully extracted 68 properties (34 × 2)
-  2. **Resume Mechanism** - Added `--start-page` parameter to CLI
-     - Files: `main.ts` (parseArgs), `integratedCrawler.ts`, `searchCrawler.ts`
-     - Usage: `--start-page 2` resumes from page 2
-     - URL construction: Automatically adds `?page=N` to search URL if startPage > 1
-  3. **Post-Crawl Validation** - Warns if property count < 80% expected
-     - File: `integratedCrawler.ts` (line 102-115)
-     - Calculates: expectedTotal = maxPages × 34 properties/page
-  4. **Repository Cleanup**
-     - Deleted nul file, moved test files to tests/ directory
-     - Cleaned logs/ and storage/ directories
-- **Database Status**: 37 properties (ready for resume from page 2)
-- **Next Action**: Resume Step 2 with `--start-page 2 --max-pages 5`
-
-### 2025-10-12 (Afternoon): Final Field Fixes + Validation Testing
-- **Problem**: price_per_sqm field missing, construction URLs being crawled
-- **Solutions Implemented**:
-  1. **price_per_sqm Calculation Fallback** (`propertyExtractor.ts` line 40-43)
-     - Added automatic calculation: price / size when label not found
-     - Result: All properties now have price_per_sqm values
-  2. **Property Type Filter** (`router.ts` line 21-23)
-     - Filter out `/projects/` URLs (construction company pages)
-     - Prevents crawling non-property listings
-- **Validation Test (7 properties, 0 delays)**:
-  - Success: 5/7 properties (71%)
-  - Blocked: 2/7 properties (28% - expected without delays)
-  - All 9 target fields: ✅ Working
-  - Phase 5B data: ✅ Extracting (transactions, schools, ratings, price comparisons)
-- **Conclusion**: All fixes working, ready for production crawl with delays
-
-### 2025-10-12 (Morning): Construction Projects Extractor
-- **Problem**: Returning 0 results when projects visible on page
-- **Root Cause**: Looking in "בניה חדשה" h3 section which is often empty
-- **Solution**: Extract from "פרויקטים חדשים בסביבה" project link cards
-- **Method**: Filter links by text patterns (חד׳ + קומות + city), parse with regex
-- **Result**: 70 projects extracted from 9 properties (was 0 before)
-- **File**: `src/extractors/constructionExtractor.ts` (110 lines, complete rewrite)
-
-### 2025-10-11: Transaction & Schools Extractors
-- **Transaction Extractor**: Complete rewrite with proper DOM traversal
-  - Problem: Returning 0 results when 5+ transactions visible
-  - Solution: Find heading → walk up DOM → parse bullet-separated segments
-  - Result: 9 transactions extracted with all 8 fields
-- **Schools Extractor**: HTML structure parsing fix
-  - Problem: Concatenating all text without proper field separation
-  - Solution: Parse CSS class structure (.css-1wi4udx, .css-pewcrd, .css-1vf85xs)
-  - Result: 10 schools with clean separated fields
-
-### 2025-10-11: DuckDB DateTime + Production Configuration
-- Fixed 4 DateTime compatibility bugs (SQLite → DuckDB migration)
-- Updated Haifa production target: ~3,600 properties
-- Enhanced schema report with intelligent column sampling
-
-### 2025-10-10: Phase 5C - DuckDB-Only Architecture
-- Removed SQLite support completely
-- BLOB image storage in DuckDB (instead of filesystem)
-- Simplified architecture (single database)
-
----
-
-## 📈 PROJECT TIMELINE
-
-| Phase | Status | Description |
-|-------|--------|-------------|
-| Phase 0 | ✅ Complete | MCP Setup (Chrome DevTools) |
-| Phase 1 | ✅ Complete | Research & Schema Design |
-| Phase 2 | ✅ Complete | Database & Infrastructure |
-| Phase 3 | ✅ Complete | Core Crawlers |
-| Phase 4 | ✅ Complete | Image Downloads |
-| Phase 5 | ✅ Complete | Production Features |
-| **Phase 5B** | ✅ **Complete** | **Enhanced Data Extraction (7 sections)** |
-| **Phase 5C** | ✅ **Complete** | **DuckDB-Only Architecture** |
-| Phase 6-8 | ⏳ Optional | Export, Analytics, Documentation |
-
-**Breakthrough Date**: 2025-10-09 - Anti-blocking solved with 100% success rate!
-
----
-
-## 🎉 ACHIEVEMENTS
-
-### Technical Breakthroughs
-1. **Anti-Blocking Solution** (2025-10-09)
-   - Fresh browser per property strategy bypasses PerimeterX completely
-   - 100% success rate validated (20-property test)
-   - Production-ready at scale
-
-2. **All Phase 5B Extractors Working** (2025-10-11 to 2025-10-12)
-   - Transaction history: Complete rewrite with DOM traversal
-   - Schools: HTML structure parsing
-   - Construction projects: Section targeting fix
-   - Result: **ALL 7 data sections verified working**
-
-3. **DuckDB-Only Architecture** (2025-10-10)
-   - Simplified from dual SQLite+DuckDB to single database
-   - Manual ID generation (no sequences)
-   - BLOB image storage
-
-### Production Capabilities
-- ✅ 38+ property fields + 11 amenities extracted
-- ✅ 7 enhanced data sections (transactions, schools, ratings, prices, construction)
-- ✅ Image downloading with caching and retry logic
-- ✅ Resume capability (upserts existing properties, skips images)
-- ✅ Live progress updates (every 15 seconds)
-- ✅ HTTP retry logic for server errors (520/502/503)
-- ✅ Comprehensive logging (Winston + file output)
-- ✅ Session tracking and error logging
+### Search Pagination - Fresh Browser Per Page ⭐
+- **Problem**: PerimeterX blocked page 2→3 navigation even with 60-120s delays
+- **Root Cause**: Reusing same browser session for multiple search pages triggered anti-bot detection
+- **Solution**: Complete architectural refactor - **fresh browser per search page**
+  - Changed from: Single browser with pagination loop → Gets blocked
+  - Changed to: Fresh browser per page, orchestrated externally → No blocking!
+  - Added `createSinglePageCrawler()` + `crawlSearchResults()` orchestrator
+  - Added SEARCH_PAGE_DELAY config (60-120s between pages)
+- **Test Results**: 3 pages, 102 URLs, **0% blocking rate** (100% success)
+- **Files**: `src/crawlers/searchCrawler.ts` (345 lines, complete rewrite), `src/utils/config.ts`
+- **Outcome**: ✅ Pagination working! Ready for Step 2 (6 pages, ~200 properties)
 
 ---
 
@@ -361,9 +205,11 @@ Based on 9-property test:
 DUCKDB_PATH=./data/databases/properties.duckdb
 
 # Anti-blocking (CRITICAL)
-BROWSER_LAUNCH_DELAY_MIN=60000  # 60 seconds
-BROWSER_LAUNCH_DELAY_MAX=120000 # 120 seconds
-HEADLESS=false                  # MUST be false for anti-blocking
+BROWSER_LAUNCH_DELAY_MIN=60000   # 60 seconds (between properties)
+BROWSER_LAUNCH_DELAY_MAX=120000  # 120 seconds (between properties)
+SEARCH_PAGE_DELAY_MIN=60000      # 60 seconds (between search pages)
+SEARCH_PAGE_DELAY_MAX=120000     # 120 seconds (between search pages)
+HEADLESS=false                   # MUST be false for anti-blocking
 
 # Crawler Settings
 MAX_PROPERTIES=3600
@@ -417,23 +263,17 @@ npx tsx verify-database.ts
 
 ---
 
-## 🚨 KNOWN ISSUES & LIMITATIONS
+## 🚨 KNOWN LIMITATIONS
 
-### Current Limitations
 1. **BLOB Image Storage**: May hang on large bulk downloads
-   - **Workaround**: Use `--no-images` flag for initial large crawls
-   - Can add images later in smaller batches
+   - **Workaround**: Use `--no-images` flag for initial crawls, add images later in batches
 
 2. **Resume Capability**: Partial
    - ✅ Updates existing properties with latest data
    - ✅ Skips already-downloaded images
-   - ⚠️ Re-processes all properties (doesn't skip already-crawled)
-   - **Benefit**: Keeps data fresh (prices can change)
+   - ⚠️ Re-processes all properties (benefit: keeps data fresh)
 
-### None-Blocking Issues
-- All critical issues resolved as of 2025-10-12
-- Anti-blocking: 100% success rate validated
-- All extractors: Working and verified with actual data
+**Note**: All critical anti-blocking issues resolved. 100% success rate validated.
 
 ---
 
@@ -443,8 +283,13 @@ npx tsx verify-database.ts
 1. ✅ **Phase 5B Complete** - All 7 data sections working
 2. ✅ **Validation Test Complete** - 7-property test confirms all 9 fields + Phase 5B working
 3. ✅ **Step 1: COMPLETE** - 34 properties crawled (100% success, 67 minutes)
-4. 🔄 **Step 2: RUNNING** - 200-property batch with production delays (60-120s) - **IN PROGRESS**
-5. ⏳ **Step 3**: Verify database → Scale up to 500 → full 3,600 properties
+4. ✅ **Pagination Fix: COMPLETE** - Fresh browser per page strategy (100% success, 0% blocking)
+5. 🚀 **Ready for Step 2**: Run production crawl (6 pages, ~200 properties)
+   - **Command**: `node dist/main.js --city חיפה --max-properties 200 --max-pages 6 --no-images`
+   - **Environment**: Set SEARCH_PAGE_DELAY_MIN/MAX=60000-120000 (60-120s)
+   - **Expected Time**: ~6-8 hours (pagination + property crawling)
+   - **Expected Success**: 80-90% property success rate
+6. ⏳ **After Step 2**: Verify database → Scale to 500 → full 3,600
 
 ### Future Enhancements (Optional)
 - **Phase 6**: Export & Analytics (JSON/CSV export, DuckDB analytics)
@@ -472,9 +317,11 @@ When starting a new session:
 
 ---
 
-**Last Updated**: 2025-10-12 (Evening)
-**Status**: ✅ READY FOR PRODUCTION CRAWL - All Fixes Complete
+**Last Updated**: 2025-10-13 (Afternoon)
+**Status**: ✅ **READY FOR STEP 2** - Pagination Fixed!
 **Step 1 Result**: ✅ Complete - 34/34 properties (100% success, 67 minutes)
-**Step 2**: ⏸️  Paused - Pagination bug fixed, ready to resume from page 2
-**Database**: 37 properties + Phase 5B data (cleaned and ready)
-**Next Action**: Resume Step 2 with `--start-page 2 --max-pages 5` to complete 200-property batch
+**Pagination Fix**: ✅ Complete - Fresh browser per page (100% success, 0% blocking, 3 pages tested)
+**Database**: 37 properties (restored backup from Step 1)
+**Next Action**: Run Step 2 production crawl (6 pages, ~200 properties)
+**Command**: `node dist/main.js --city חיפה --max-properties 200 --max-pages 6 --no-images`
+**Environment**: Set SEARCH_PAGE_DELAY_MIN/MAX=60000-120000 (60-120s between search pages)

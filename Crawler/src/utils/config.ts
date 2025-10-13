@@ -36,6 +36,9 @@ export const config = {
     maxRequestRetries: parseInt(process.env.MAX_REQUEST_RETRIES || "3", 10),
     requestDelayMin: parseInt(process.env.REQUEST_DELAY_MIN || "2000", 10),
     requestDelayMax: parseInt(process.env.REQUEST_DELAY_MAX || "5000", 10),
+    // Search page pagination delays (anti-blocking for search results)
+    searchPageDelayMin: parseInt(process.env.SEARCH_PAGE_DELAY_MIN || "60000", 10), // 60s default
+    searchPageDelayMax: parseInt(process.env.SEARCH_PAGE_DELAY_MAX || "120000", 10), // 120s default
     // Fresh browser per property (anti-blocking strategy)
     freshBrowserPerProperty: process.env.FRESH_BROWSER_PER_PROPERTY !== "false", // Default: true
     browserLaunchDelayMin: parseInt(process.env.BROWSER_LAUNCH_DELAY_MIN || "60000", 10), // 60s default

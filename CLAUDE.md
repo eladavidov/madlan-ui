@@ -304,29 +304,41 @@ npm run export:json      # Export to JSON
 npm run analyze          # Run DuckDB analytics
 ```
 
+### Git Workflow Policy
+
+**🚨 CRITICAL: Manual Git Control**
+
+- **NEVER commit changes automatically** unless the user explicitly requests it AND confirms
+- **Default behavior**: Print commit messages for user to copy and execute manually
+- **User preference**: User prefers manual git control for all operations
+- **Exception**: Only handle git directly if user has a major problem AND explicitly confirms
+- **When generating commit messages**: Keep them SHORT and concise
+
+**Workflow**:
+1. User requests changes → Claude implements changes
+2. Claude prints commit message → User copies and commits manually
+3. User explicitly asks "commit this" AND Claude verifies → Only then use git tools
+
 ### Crawler Project Status
 
 **📚 MASTER DOCUMENT**: See **`Crawler/PROJECT-PLAN.md`** - **START HERE**
 
-**Current Status**: ✅ **PRODUCTION READY** - Pagination Fixed + Resume Mechanism Added
+**Current Status**: ✅ **PRODUCTION READY** - Search Pagination Fixed (Fresh Browser Per Page)
 **Breakthrough Date**: 2025-10-09 - **Anti-blocking solved with 100% success rate!**
-**Latest Update**: 2025-10-12 (Evening) - **Pagination Bug Fixed + Resume Capability Added**
+**Latest Update**: 2025-10-13 (Afternoon) - **Search Pagination Fixed (Fresh Browser Per Page)**
 
-**Today's Accomplishments (2025-10-12 Evening Session)**:
-1. ✅ **Fixed pagination bug** - Step 2 crawl was only extracting 1 page instead of 6
-   - Changed from button-based to URL-based pagination (`?page=N`)
-   - Test: Successfully extracted 68 properties from 2 pages (34 × 2)
-2. ✅ **Added resume mechanism** - New `--start-page` parameter to resume from any page
-   - Usage: `--start-page 2` resumes from page 2
-   - Automatically adds `?page=N` to search URL
-3. ✅ **Added post-crawl validation** - Warns if property count < 80% expected
-4. ✅ **Repository cleanup** - Cleaned logs/, storage/, moved test files to tests/
-5. ✅ **Database cleaned** - 37 properties ready for production resume
-
-**Earlier Today (2025-10-12 Afternoon)**:
-1. ✅ **Fixed price_per_sqm extraction** - Added calculation fallback (price / size)
-2. ✅ **Added property type filter** - Excludes construction company URLs
-3. ✅ **Verified all 9 target fields** working correctly
+**Today's Accomplishments (2025-10-13 Afternoon Session)**:
+1. ✅ **Fixed search results pagination** - Fresh browser per search page (not per property)
+   - **Problem**: PerimeterX blocked pagination even with 60-120s delays (reusing same browser session)
+   - **Solution**: Complete refactor to launch fresh browser for each search page
+   - **Architecture**: `createSinglePageCrawler()` + orchestrator loop with delays
+   - **Test Results**: 3 pages crawled with 102 URLs extracted (34+34+34), **0% blocking rate**
+   - **Config**: Added SEARCH_PAGE_DELAY_MIN/MAX environment variables (60-120s default)
+   - **Implementation**: `src/crawlers/searchCrawler.ts` (345 lines, complete rewrite)
+2. ✅ **Repository cleanup** - Removed temporary files and old test artifacts
+   - Deleted: `test-pagination.ts`, `check-backup.ts`, `debug-screenshots/`, `storage/`, old test scripts
+   - Kept: `schema-report-with-data.html`, `verify-database.ts`
+3. ✅ **Updated documentation** - CLAUDE.md git policy + PROJECT-PLAN.md streamlined
 
 **🎉 Major Achievement - Anti-Blocking Solution**:
 - **Solution**: Fresh browser per property with random delays (60-120s) + HEADLESS=false
