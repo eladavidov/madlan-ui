@@ -97,6 +97,9 @@ export async function crawlPropertiesWithFreshBrowser(
     totalDuration: 0,
   };
 
+  // Track failed URLs for retry at end of cycle
+  const failedUrls: string[] = [];
+
   const startTime = Date.now();
 
   logger.info("=" .repeat(70));
@@ -174,6 +177,7 @@ export async function crawlPropertiesWithFreshBrowser(
           logger.error("❌ BLOCKED: 403 Forbidden (should not happen with fresh browser!)");
           await sessionRepo.logError(sessionId, "blocking", "403 Forbidden on fresh browser", undefined, url);
           stats.propertiesFailed++;
+          failedUrls.push(url); // Track for retry
           await browser.close();
           break; // Don't retry 403
         }
@@ -194,6 +198,7 @@ export async function crawlPropertiesWithFreshBrowser(
             logger.error(`❌ Max retries reached for HTTP ${status}`);
             await sessionRepo.logError(sessionId, "http_error", `HTTP ${status} after ${maxHttpErrorRetries} retries`, undefined, url);
             stats.propertiesFailed++;
+            failedUrls.push(url); // Track for retry
             break; // Give up
           }
         }
@@ -202,6 +207,7 @@ export async function crawlPropertiesWithFreshBrowser(
           logger.warn(`⚠️  Unexpected status: ${status}`);
           await sessionRepo.logError(sessionId, "http_error", `HTTP ${status}`, undefined, url);
           stats.propertiesFailed++;
+          failedUrls.push(url); // Track for retry
           await browser.close();
           break; // Don't retry other errors
         }
@@ -239,6 +245,7 @@ export async function crawlPropertiesWithFreshBrowser(
         logger.warn("🛑 CAPTCHA detected (unexpected with fresh browser)");
         await sessionRepo.logError(sessionId, "captcha", "CAPTCHA on fresh browser", undefined, url);
         stats.propertiesFailed++;
+        failedUrls.push(url); // Track for retry
         await browser.close();
         continue;
       }
@@ -254,6 +261,7 @@ export async function crawlPropertiesWithFreshBrowser(
         logger.error("❌ Extraction failed");
         await sessionRepo.logError(sessionId, "extraction", "extractPropertyData returned null", undefined, url);
         stats.propertiesFailed++;
+        failedUrls.push(url); // Track for retry
         await browser.close();
         continue;
       }
@@ -411,6 +419,7 @@ export async function crawlPropertiesWithFreshBrowser(
           continue; // Retry
         } else {
           stats.propertiesFailed++;
+          failedUrls.push(url); // Track for retry
           break; // Give up
         }
       }
@@ -444,6 +453,267 @@ export async function crawlPropertiesWithFreshBrowser(
       logger.info(`\n⏸️  Waiting ${delaySeconds}s before next property (anti-blocking)...`);
       await new Promise(resolve => setTimeout(resolve, delay));
     }
+  }
+
+  // ============================================================================
+  // RETRY PHASE: Retry failed properties once
+  // ============================================================================
+  if (failedUrls.length > 0) {
+    logger.info("\n" + "=".repeat(70));
+    logger.info(`🔄 RETRY PHASE: Attempting to retry ${failedUrls.length} failed properties`);
+    logger.info("=".repeat(70));
+
+    const retryStartTime = Date.now();
+    let retriesSuccessful = 0;
+    let retriesFailed = 0;
+
+    for (let i = 0; i < failedUrls.length; i++) {
+      const url = failedUrls[i];
+      const retryPropertyStartTime = Date.now();
+
+      logger.info(`\n${"=".repeat(70)}`);
+      logger.info(`🔄 Retry ${i + 1}/${failedUrls.length}: ${url}`);
+      logger.info("=".repeat(70));
+
+      let browser = null;
+
+      try {
+        // Launch fresh browser for retry
+        logger.info("🚀 Launching fresh browser instance...");
+        browser = await chromium.launch({
+          headless: config.browser.headless,
+          args: [
+            "--no-sandbox",
+            "--disable-setuid-sandbox",
+            "--disable-dev-shm-usage",
+            "--disable-blink-features=AutomationControlled",
+            "--disable-web-security",
+            "--disable-features=IsolateOrigins,site-per-process",
+            "--allow-running-insecure-content",
+            "--disable-background-timer-throttling",
+            "--disable-backgrounding-occluded-windows",
+            "--disable-renderer-backgrounding",
+            "--disable-infobars",
+            "--window-size=1920,1080",
+            "--start-maximized",
+          ],
+        });
+
+        const context = await browser.newContext({
+          userAgent: config.browser.userAgent,
+          viewport: { width: 1920, height: 1080 },
+          locale: "he-IL",
+          timezoneId: "Asia/Jerusalem",
+        });
+
+        const page = await context.newPage();
+
+        // Navigate to property
+        logger.info("🌐 Navigating to property page...");
+        const response = await page.goto(url, {
+          waitUntil: "domcontentloaded",
+          timeout: 60000,
+        });
+
+        const status = response?.status();
+        logger.info(`📡 HTTP Status: ${status}`);
+
+        if (status !== 200) {
+          logger.warn(`⚠️  Retry failed with HTTP ${status}`);
+          await browser.close();
+          retriesFailed++;
+          continue;
+        }
+
+        // Wait for content to render
+        logger.info("⏳ Waiting for React content to render...");
+        await page.waitForFunction(
+          () => {
+            const hasImages = document.querySelector('img') !== null;
+            const hasPrice = document.body.textContent?.includes('₪') || false;
+            const bodyLength = document.body.textContent?.length || 0;
+            return bodyLength > 5000 || (hasImages && hasPrice);
+          },
+          { timeout: 15000 }
+        );
+
+        // Human behavior simulation
+        logger.info("🖱️  Simulating human behavior...");
+        await page.waitForTimeout(5000);
+        await page.evaluate(() => window.scrollBy({ top: 300, behavior: 'smooth' }));
+        await page.waitForTimeout(2000);
+        await page.evaluate(() => window.scrollBy({ top: 500, behavior: 'smooth' }));
+        await page.waitForTimeout(8000);
+
+        // Extract property data
+        logger.info("📊 Extracting property data...");
+        const propertyData = await extractPropertyData(page, url);
+
+        if (!propertyData) {
+          logger.error("❌ Retry extraction failed");
+          await browser.close();
+          retriesFailed++;
+          continue;
+        }
+
+        logger.info(`✅ Retry successful: ${propertyData.id}`);
+        logger.info(`   Price: ₪${propertyData.price?.toLocaleString() || "N/A"}`);
+        logger.info(`   Rooms: ${propertyData.rooms || "N/A"}, Size: ${propertyData.size || "N/A"}m²`);
+
+        // Check if property exists
+        const existing = await propertyRepo.findById(propertyData.id);
+
+        // Save to database
+        await propertyRepo.upsert(propertyData);
+
+        if (existing) {
+          logger.info(`📝 Updated existing property`);
+        } else {
+          logger.info(`🆕 Added new property`);
+        }
+
+        // Extract enhanced data (Phase 5B)
+        logger.info("🔍 Extracting enhanced data (Phase 5B)...");
+
+        // Transaction History
+        try {
+          const transactions = await extractTransactionHistory(page, propertyData.id);
+          if (transactions.length > 0) {
+            await transactionRepo.insertMany(transactions);
+            logger.info(`  ✅ Saved ${transactions.length} transactions`);
+          }
+        } catch (error: any) {
+          logger.warn(`  ⚠️  Transaction extraction failed: ${error.message}`);
+        }
+
+        // Nearby Schools
+        try {
+          const schools = await extractNearbySchools(page, propertyData.id);
+          if (schools.length > 0) {
+            await schoolsRepo.insertMany(schools);
+            logger.info(`  ✅ Saved ${schools.length} schools`);
+          }
+        } catch (error: any) {
+          logger.warn(`  ⚠️  Schools extraction failed: ${error.message}`);
+        }
+
+        // Neighborhood Ratings
+        try {
+          const ratings = await extractNeighborhoodRatings(page, propertyData.id);
+          if (ratings) {
+            await ratingsRepo.upsert(ratings);
+            logger.info(`  ✅ Saved neighborhood ratings`);
+          }
+        } catch (error: any) {
+          logger.warn(`  ⚠️  Ratings extraction failed: ${error.message}`);
+        }
+
+        // Price Comparisons
+        try {
+          const priceComps = await extractPriceComparisons(page, propertyData.id);
+          if (priceComps.length > 0) {
+            await priceComparisonRepo.insertMany(priceComps);
+            logger.info(`  ✅ Saved ${priceComps.length} price comparisons`);
+          }
+        } catch (error: any) {
+          logger.warn(`  ⚠️  Price comparison extraction failed: ${error.message}`);
+        }
+
+        // Construction Projects
+        try {
+          const projects = await extractConstructionProjects(page, propertyData.id);
+          if (projects.length > 0) {
+            await constructionRepo.insertMany(projects);
+            logger.info(`  ✅ Saved ${projects.length} construction projects`);
+          }
+        } catch (error: any) {
+          logger.warn(`  ⚠️  Construction extraction failed: ${error.message}`);
+        }
+
+        // Extract images (if enabled)
+        if (downloadImages) {
+          const imageUrls = await extractImageUrls(page);
+          logger.info(`📸 Found ${imageUrls.length} images`);
+
+          if (imageUrls.length > 0) {
+            await imageRepo.deleteByPropertyId(propertyData.id);
+
+            try {
+              const downloadStats = await imageStore.downloadPropertyImages(
+                propertyData.id,
+                imageUrls,
+                { maxRetries: imageRetries, timeout: imageTimeout }
+              );
+
+              stats.imagesDownloaded += downloadStats.successful;
+              stats.imagesFailed += downloadStats.failed;
+
+              logger.info(`📥 Images: ${downloadStats.successful} downloaded, ${downloadStats.failed} failed`);
+            } catch (error: any) {
+              logger.error(`Error downloading images: ${error.message}`);
+              stats.imagesFailed += imageUrls.length;
+            }
+          }
+        }
+
+        retriesSuccessful++;
+
+        // Close browser
+        await browser.close();
+        logger.info("🔒 Browser closed");
+
+        const retryDuration = Date.now() - retryPropertyStartTime;
+        logger.info(`⏱️  Retry completed in ${Math.round(retryDuration / 1000)}s`);
+
+      } catch (error: any) {
+        logger.error(`❌ Retry error: ${error.message}`);
+        logger.error(error.stack);
+        await sessionRepo.logError(sessionId, "retry_error", error.message, error.stack, url);
+
+        if (browser) {
+          try {
+            await browser.close();
+          } catch (e) {
+            // Ignore close errors
+          }
+        }
+
+        retriesFailed++;
+      }
+
+      // Update session stats
+      await sessionRepo.updateStats(sessionId, {
+        properties_found: stats.propertiesProcessed,
+        properties_new: stats.propertiesSuccessful + retriesSuccessful,
+        properties_updated: 0,
+        properties_failed: retriesFailed,
+        images_downloaded: stats.imagesDownloaded,
+        images_failed: stats.imagesFailed,
+      });
+
+      // Random delay before next retry (except last one)
+      if (i < failedUrls.length - 1) {
+        const delay = browserLaunchDelayMin + Math.random() * (browserLaunchDelayMax - browserLaunchDelayMin);
+        const delaySeconds = Math.round(delay / 1000);
+        logger.info(`\n⏸️  Waiting ${delaySeconds}s before next retry (anti-blocking)...`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
+    }
+
+    const retryDuration = Date.now() - retryStartTime;
+
+    logger.info("\n" + "=".repeat(70));
+    logger.info("🔄 RETRY SUMMARY");
+    logger.info("=".repeat(70));
+    logger.info(`Total retries attempted: ${failedUrls.length}`);
+    logger.info(`✅ Successful: ${retriesSuccessful} (${Math.round(retriesSuccessful / failedUrls.length * 100)}%)`);
+    logger.info(`❌ Failed: ${retriesFailed} (${Math.round(retriesFailed / failedUrls.length * 100)}%)`);
+    logger.info(`⏱️  Retry duration: ${Math.round(retryDuration / 1000 / 60)} minutes`);
+    logger.info("=".repeat(70));
+
+    // Update final stats with retry results
+    stats.propertiesSuccessful += retriesSuccessful;
+    stats.propertiesFailed = retriesFailed; // Only count final failures
   }
 
   stats.totalDuration = Date.now() - startTime;

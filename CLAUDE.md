@@ -2,6 +2,27 @@ c# CLAUDE.md
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+---
+
+## 🚨 GIT WORKFLOW POLICY - READ THIS FIRST 🚨
+
+**CRITICAL: Manual Git Control Only**
+
+- ❌ **NEVER commit changes automatically** - User controls all git operations
+- ❌ **NEVER run git commands** unless user explicitly requests AND confirms
+- ✅ **ALWAYS print commit messages** for user to copy and execute manually
+- ✅ **Keep commit messages concise** - Focus on the key changes (3-5 lines typical)
+- ✅ **User preference**: Manual git control for all operations
+
+**Exception**: Only handle git directly if user has a major problem AND explicitly says "commit this" or "yes, commit"
+
+**Default behavior for all code changes**:
+1. Implement the changes
+2. Print a short commit message at the end
+3. User copies and commits manually
+
+---
+
 ## Project Overview
 
 This repository contains **two related projects**:
@@ -304,30 +325,54 @@ npm run export:json      # Export to JSON
 npm run analyze          # Run DuckDB analytics
 ```
 
-### Git Workflow Policy
-
-**🚨 CRITICAL: Manual Git Control**
-
-- **NEVER commit changes automatically** unless the user explicitly requests it AND confirms
-- **Default behavior**: Print commit messages for user to copy and execute manually
-- **User preference**: User prefers manual git control for all operations
-- **Exception**: Only handle git directly if user has a major problem AND explicitly confirms
-- **When generating commit messages**: Keep them SHORT and concise
-
-**Workflow**:
-1. User requests changes → Claude implements changes
-2. Claude prints commit message → User copies and commits manually
-3. User explicitly asks "commit this" AND Claude verifies → Only then use git tools
-
 ### Crawler Project Status
 
-**📚 MASTER DOCUMENT**: See **`Crawler/PROJECT-PLAN.md`** - **START HERE**
+**📚 MASTER DOCUMENT**: See **`Crawler/PROJECT-PLAN.md`** - **START HERE FOR ALL SESSIONS**
 
-**Current Status**: ✅ **PRODUCTION READY** - Search Pagination Fixed (Fresh Browser Per Page)
-**Breakthrough Date**: 2025-10-09 - **Anti-blocking solved with 100% success rate!**
-**Latest Update**: 2025-10-13 (Afternoon) - **Search Pagination Fixed (Fresh Browser Per Page)**
+**Quick Status** (2025-10-14):
+- ✅ **Step 2 Complete**: 201 properties crawled (98% success rate)
+- ✅ **Retry Mechanism**: Automatic retry implemented (75% recovery rate)
+- ✅ **Anti-Blocking**: 100% pagination success, 98% property crawling success
+- 🚀 **Next**: Step 3 (500 properties, overnight crawl)
 
-**Today's Accomplishments (2025-10-13 Afternoon Session)**:
+**Session Resumption** (for Claude Code):
+1. **Always read** `Crawler/PROJECT-PLAN.md` at session start
+2. **Check crawler status**: Is it running? Show database state
+3. **Ask user**: Should I start Step 3 crawler?
+4. **Follow guide**: See PROJECT-PLAN.md "Session Resumption Guide" section
+
+**Key Accomplishments**:
+- Fresh browser per search page (0% blocking)
+- Fresh browser per property (98% success)
+- Automatic retry mechanism (permanent feature)
+- 201 properties with full Phase 5B data in database
+
+**📖 Documentation**:
+- `Crawler/PROJECT-PLAN.md` - Master status document (read at every session start)
+- `Crawler/docs/PRD.md` - Product Requirements Document
+- `Crawler/docs/ANTI-BLOCKING.md` - Anti-blocking strategy
+- `Crawler/docs/SOLUTION-IMPLEMENTED.md` - Technical implementation
+- `Crawler/docs/RESEARCH.md` - Website structure research
+- `Crawler/docs/SCHEMA.md` - Database schema
+- `Crawler/docs/SCRAPING-TIMEOUTS.md` - Time estimates
+
+**💬 Monitoring Live Crawls**:
+When a production crawl is running, user can type **"status"** for compact updates:
+```
+X/TARGET complete (Z%) | ⏱️  Time elapsed | ✅ Success rate | ❌ Failures
+Rate: ~X.X properties/min | ETA: ~X hours
+```
+
+---
+
+## Old Session Notes (Pre-2025-10-14)
+
+<details>
+<summary>Click to expand historical development notes</summary>
+
+**Note**: The details below are from earlier development sessions and are kept for historical reference only. For current status, always refer to `Crawler/PROJECT-PLAN.md`.
+
+**Session 2025-10-13 Afternoon**:
 1. ✅ **Fixed search results pagination** - Fresh browser per search page (not per property)
    - **Problem**: PerimeterX blocked pagination even with 60-120s delays (reusing same browser session)
    - **Solution**: Complete refactor to launch fresh browser for each search page
@@ -494,4 +539,4 @@ When a production crawl is running, the user can type **"status"** for a compact
 Now: Property N
 Rate: ~0.47 properties/min | Remaining: ~Xm | Finish ETA: ~HH:MM
 ```
-This provides quick, non-intrusive updates without verbose logs.
+This provides quick, non-intrusive updates without verbose logs.</details>
