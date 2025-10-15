@@ -29,14 +29,21 @@
 
 ### 🎯 Ready to Proceed: Step 3 Production Run
 
-**Command**:
+**Command** (Auto-Resume Enabled):
 ```bash
 cd Crawler
-node dist/main.js --city חיפה --max-properties 500 --max-pages 15 --no-images
+node dist/main.js --city חיפה --max-pages 30 --no-images
 ```
 
+**Auto-Resume**:
+- ✅ Automatically detects current database state
+- ✅ Calculates last completed page from property count
+- ✅ Resumes from next page automatically
+- ✅ Manual override available with `--start-page N`
+
 **Expected**:
-- **Time**: ~12-20 hours
+- **Auto-Start**: Page 11 (344 properties ÷ 34 = page 10.1)
+- **Time**: ~3-5 hours (~170 new properties)
 - **Success Rate**: 98%+ (with automatic retry for both search pages and properties)
 - **Fresh browser per page** (search) + **per property** (crawling)
 - **Delays**: 60-120s between pages and properties
@@ -44,6 +51,24 @@ node dist/main.js --city חיפה --max-properties 500 --max-pages 15 --no-image
 ---
 
 ## 🚀 LATEST ENHANCEMENTS (2025-10-15)
+
+### ✅ Auto-Resume Feature (2025-10-15)
+
+**Implementation**: `src/crawlers/integratedCrawler.ts`
+
+**Features**:
+- **Automatic Page Detection**: Queries database for property count
+- **Smart Calculation**: `Math.floor(properties / 34) + 1` = next page to crawl
+- **Manual Override**: `--start-page N` still works for edge cases
+- **Zero Configuration**: Just run same command repeatedly
+
+**Benefits**:
+- Eliminates manual page calculation between batches
+- Prevents accidental re-crawling of completed pages
+- Simplifies production workflow to single command
+- Logs auto-detection for verification
+
+**Test Results**: Ready for production testing
 
 ### ✅ Phase 2: Enhanced Anti-Blocking for Search Pages
 
@@ -119,9 +144,13 @@ MAX_PROPERTIES=3600
 ### CLI Flags
 ```bash
 --city חיפה              # Target city
---max-properties N       # Total properties to crawl
---max-pages N            # Max search result pages (N ≈ properties/34)
+--max-pages N            # Number of search pages to crawl
+--start-page N           # Manual override: start from specific page (optional)
 --no-images              # Skip image downloads (recommended)
+
+# Auto-Resume (NEW):
+# If --start-page is NOT provided, automatically detects last crawled page
+# Calculation: current_properties ÷ 34 = last_page, resume from last_page + 1
 ```
 
 ---
@@ -140,10 +169,11 @@ ps aux | grep "node dist/main.js" | grep -v grep
 cd Crawler && npx tsx verify-database.ts
 ```
 
-**3. Start production crawl**:
+**3. Start production crawl** (Auto-Resume):
 ```bash
 cd Crawler
-node dist/main.js --city חיפה --max-properties 500 --max-pages 15 --no-images
+node dist/main.js --city חיפה --max-pages 30 --no-images
+# Automatically resumes from last crawled page
 ```
 
 **4. Monitor progress** (if running):
@@ -158,21 +188,31 @@ tail -f logs/combined.log
 ### Step 3: 500 Properties (Current Target)
 ```bash
 cd Crawler
-node dist/main.js --city חיפה --max-properties 500 --max-pages 15 --no-images
+node dist/main.js --city חיפה --max-pages 30 --no-images
+# Auto-resumes from page 11 (344 existing properties)
 ```
 
 **Expected**:
-- Time: ~12-20 hours
+- Auto-Start: Page 11 (database has 344 properties)
+- New Properties: ~170 (pages 11-15, 5 pages × 34)
+- Time: ~3-5 hours
 - Success Rate: 98%+
 - All anti-blocking features active
 - Automatic retry for search pages and properties
 
 ### Step 4: Full Production (3,600 Properties)
-Run in sequential batches:
-- Night 1: 1,000 properties (30 pages)
-- Night 2: 2,000 properties (60 pages)
-- Night 3: 3,000 properties (90 pages)
-- Night 4: 3,600 properties (120 pages, final)
+Run in sequential batches (Auto-Resume):
+```bash
+# Just run same command repeatedly - auto-resumes each time!
+cd Crawler
+node dist/main.js --city חיפה --max-pages 30 --no-images
+```
+
+**Suggested Batches**:
+- Batch 1: 30 pages (auto-starts from page 11) → ~500 total properties
+- Batch 2: 30 pages (auto-starts from page 16) → ~1,000 total properties
+- Batch 3: 30 pages (auto-starts from page 31) → ~1,500 total properties
+- Continue until 3,600 properties reached
 
 ### Verification After Each Batch
 ```bash

@@ -41,13 +41,45 @@ export async function runFullCrawl(
   options: IntegratedCrawlerOptions = {}
 ): Promise<CrawlSummary> {
   const startTime = Date.now();
+
+  // Auto-Resume: Calculate start page from database if not provided
+  let calculatedStartPage = 1;
+  const dbPath = options.dbPath || config.database.path;
+
+  if (!options.startPage) {
+    let db;
+    try {
+      db = await initDatabase(dbPath);
+      const result = await db.queryOne<{ count: number }>("SELECT COUNT(*) as count FROM properties", []);
+      const currentProperties = result?.count || 0;
+
+      if (currentProperties > 0) {
+        const lastCompletePage = Math.floor(currentProperties / 34);
+        calculatedStartPage = lastCompletePage + 1;
+        logger.info(`🔄 Auto-Resume Detected:`);
+        logger.info(`   Database has ${currentProperties} properties`);
+        logger.info(`   Last complete page: ${lastCompletePage}`);
+        logger.info(`   Resuming from page: ${calculatedStartPage}`);
+      }
+    } catch (error) {
+      logger.warn("Could not auto-detect resume point, starting from page 1");
+    } finally {
+      if (db) {
+        try {
+          db.close();
+        } catch (e) {
+          // Ignore close errors
+        }
+      }
+    }
+  }
+
   const {
     city = config.target.city,
     maxSearchPages = 5,
-    startPage = 1,
+    startPage = calculatedStartPage,
     maxProperties = config.target.maxProperties,
     searchUrl,
-    dbPath = config.database.path,
     downloadImages = true,
     imageTimeout,
     imageRetries,
