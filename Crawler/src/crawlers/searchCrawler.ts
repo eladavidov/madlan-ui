@@ -72,6 +72,18 @@ function createSinglePageCrawler(
     // Session management
     persistCookiesPerSession: false, // CRITICAL: Fresh session per page
 
+    // PHASE 2: Enhanced anti-blocking - Set locale and timezone
+    preNavigationHooks: [
+      async ({ page }) => {
+        // Set Israeli locale and timezone for better authenticity
+        await page.context().addInitScript(() => {
+          Object.defineProperty(navigator, 'language', { get: () => 'he-IL' });
+          Object.defineProperty(navigator, 'languages', { get: () => ['he-IL', 'he', 'en-US', 'en'] });
+        });
+        // Note: Timezone is harder to override in browser, but language is set
+      }
+    ],
+
     // Request handler
     async requestHandler({ page, request, log }) {
       const url = request.url;
@@ -169,7 +181,18 @@ function createSinglePageCrawler(
         // Step 5: Additional wait for any lazy-loaded content
         await page.waitForTimeout(2000);
 
-        // Simulate human behavior AFTER content loads
+        // PHASE 2: Enhanced human behavior simulation (from property crawler)
+        logger.info("🖱️  Simulating enhanced human behavior...");
+        await page.waitForTimeout(5000); // Initial delay
+
+        // Scroll (human-like reading)
+        await page.evaluate(() => window.scrollBy({ top: 300, behavior: 'smooth' }));
+        await page.waitForTimeout(2000);
+
+        await page.evaluate(() => window.scrollBy({ top: 500, behavior: 'smooth' }));
+        await page.waitForTimeout(8000); // Reading time
+
+        // Additional human behavior patterns
         await simulateHumanBehavior(page);
 
         // Check for CAPTCHA and other blocking signals
@@ -278,6 +301,14 @@ export async function crawlSearchResults(
   const { maxPages = 10, startPage = 1, onPropertiesFound } = options;
   const allPropertyUrls: string[] = [];
 
+  // PHASE 3: Track failed pages for retry
+  const failedPages: Array<{
+    pageNumber: number;
+    url: string;
+    reason: string;
+    errorType: 'http_error' | 'zero_urls' | 'exception';
+  }> = [];
+
   logger.info(`Starting search crawl with fresh browser per page`);
   logger.info(`Base URL: ${baseSearchUrl}`);
   logger.info(`Pages: ${startPage} to ${startPage + maxPages - 1}`);
@@ -314,6 +345,17 @@ export async function crawlSearchResults(
 
       logger.info(`✅ Page ${pageNumber} complete: ${pageUrls.length} URLs extracted`);
 
+      // PHASE 3: Detect silent failures (0 URLs extracted)
+      if (pageUrls.length === 0) {
+        logger.warn(`⚠️ Page ${pageNumber} extracted 0 URLs - marking for retry`);
+        failedPages.push({
+          pageNumber,
+          url: pageUrl,
+          reason: 'Extracted 0 property URLs',
+          errorType: 'zero_urls'
+        });
+      }
+
       // If this was not the last page, wait before next page
       if (i < maxPages - 1) {
         const delayMs = Math.floor(
@@ -329,9 +371,97 @@ export async function crawlSearchResults(
 
     } catch (error: any) {
       logger.error(`❌ Failed to crawl search page ${pageNumber}:`, error.message);
-      logger.warn(`⚠️  Stopping pagination at page ${pageNumber}`);
-      break; // Stop pagination on first failure
+
+      // PHASE 3: Track failure and continue to next page
+      const errorType = error.message.includes('HTTP') ? 'http_error' : 'exception';
+
+      failedPages.push({
+        pageNumber,
+        url: pageUrl,
+        reason: error.message,
+        errorType
+      });
+
+      logger.warn(`⚠️  Continuing to next page (will retry failed pages later)...`);
+      continue; // Continue to next page instead of breaking
     }
+  }
+
+  // ============================================================================
+  // PHASE 3: RETRY PHASE - Retry all failed pages once
+  // ============================================================================
+  if (failedPages.length > 0) {
+    logger.info('');
+    logger.info('='.repeat(70));
+    logger.info(`🔄 RETRY PHASE: ${failedPages.length} failed search pages`);
+    logger.info('='.repeat(70));
+
+    const retryResults = {
+      attempted: 0,
+      successful: 0,
+      stillFailed: 0,
+    };
+
+    for (const {pageNumber, url, reason, errorType} of failedPages) {
+      retryResults.attempted++;
+
+      logger.info('');
+      logger.info(`🔄 Retry ${retryResults.attempted}/${failedPages.length}: Page ${pageNumber}`);
+      logger.info(`   Failed reason: ${reason}`);
+      logger.info(`   Error type: ${errorType}`);
+
+      try {
+        const pageUrls: string[] = [];
+
+        // Create fresh crawler for retry
+        const crawler = createSinglePageCrawler(pageNumber, async (urls) => {
+          pageUrls.push(...urls);
+          allPropertyUrls.push(...urls);
+          if (onPropertiesFound) {
+            await onPropertiesFound(urls);
+          }
+        });
+
+        // Retry this page
+        await crawler.run([url]);
+
+        if (pageUrls.length > 0) {
+          logger.info(`✅ RETRY SUCCESS: Page ${pageNumber} - ${pageUrls.length} URLs recovered`);
+          retryResults.successful++;
+        } else {
+          logger.warn(`⚠️ RETRY FAILED: Page ${pageNumber} still returned 0 URLs`);
+          retryResults.stillFailed++;
+        }
+
+        // Wait before next retry (use same delays)
+        if (retryResults.attempted < failedPages.length) {
+          const delayMs = Math.floor(
+            Math.random() * (config.crawler.searchPageDelayMax - config.crawler.searchPageDelayMin) +
+            config.crawler.searchPageDelayMin
+          );
+          logger.info(`⏳ Waiting ${(delayMs/1000).toFixed(0)}s before next retry...`);
+          await randomDelay({
+            min: config.crawler.searchPageDelayMin,
+            max: config.crawler.searchPageDelayMax,
+          });
+        }
+
+      } catch (error: any) {
+        logger.error(`❌ RETRY FAILED: Page ${pageNumber} - ${error.message}`);
+        retryResults.stillFailed++;
+      }
+    }
+
+    // Retry summary
+    logger.info('');
+    logger.info('='.repeat(70));
+    logger.info('🔄 RETRY SUMMARY');
+    logger.info('='.repeat(70));
+    logger.info(`Total pages retried: ${retryResults.attempted}`);
+    logger.info(`✅ Recovered: ${retryResults.successful} (${Math.round(retryResults.successful / retryResults.attempted * 100)}%)`);
+    logger.info(`❌ Still failed: ${retryResults.stillFailed} (${Math.round(retryResults.stillFailed / retryResults.attempted * 100)}%)`);
+    logger.info(`📊 Recovery rate: ${Math.round(retryResults.successful / retryResults.attempted * 100)}%`);
+    logger.info('='.repeat(70));
   }
 
   logger.info('');

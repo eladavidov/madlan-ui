@@ -329,17 +329,24 @@ npm run analyze          # Run DuckDB analytics
 
 **📚 MASTER DOCUMENT**: See **`Crawler/PROJECT-PLAN.md`** - **START HERE FOR ALL SESSIONS**
 
+**🚨 CRITICAL ISSUE DISCOVERED (2025-10-14)**:
+- **Retry Mechanism Gap**: Only retries failed **properties**, NOT failed **search pages**
+- **Impact**: ~34 properties lost per blocked search page (~3-4% data loss projected)
+- **Action Required**: Implement search page retry after Step 3 completes
+- **Status**: Step 3 in progress, implementation scheduled after completion
+
 **Quick Status** (2025-10-14):
 - ✅ **Step 2 Complete**: 201 properties crawled (98% success rate)
-- ✅ **Retry Mechanism**: Automatic retry implemented (75% recovery rate)
-- ✅ **Anti-Blocking**: 100% pagination success, 98% property crawling success
-- 🚀 **Next**: Step 3 (500 properties, overnight crawl)
+- 🚧 **Step 3 IN PROGRESS**: 500 properties target, 15 search pages
+- ⚠️ **Known Issues**: 1+ search pages with extraction failures detected
+- 🔧 **Next Action**: Implement search page retry mechanism (see PROJECT-PLAN.md)
 
 **Session Resumption** (for Claude Code):
 1. **Always read** `Crawler/PROJECT-PLAN.md` at session start
-2. **Check crawler status**: Is it running? Show database state
-3. **Ask user**: Should I start Step 3 crawler?
-4. **Follow guide**: See PROJECT-PLAN.md "Session Resumption Guide" section
+2. **CHECK "🚨 CRITICAL: Retry Mechanism Gap" section** - top priority
+3. **Check crawler status**: Is it running? Show database state
+4. **If Step 3 complete**: Implement search page retry before Step 4
+5. **Follow guide**: See PROJECT-PLAN.md "Session Resumption Guide" section
 
 **Key Accomplishments**:
 - Fresh browser per search page (0% blocking)
