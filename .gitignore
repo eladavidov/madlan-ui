@@ -76,3 +76,5 @@ Thumbs.db
 
 # Claude Code settings
 .claude/
+Crawler/data/databases/properties.duckdb.wal
+Crawler/data/databases/properties.duckdb.backup-2025-10-17

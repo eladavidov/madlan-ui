@@ -110,12 +110,43 @@ export async function crawlPropertiesWithFreshBrowser(
   logger.info(`Download images: ${downloadImages}`);
   logger.info("=" .repeat(70));
 
-  for (let i = 0; i < propertyUrls.length; i++) {
-    const url = propertyUrls[i];
+  // ============================================================================
+  // PRE-CRAWL DUPLICATE CHECK: Filter out already-crawled properties
+  // ============================================================================
+  logger.info(`\n🔍 Checking for duplicates in database...`);
+  const existingUrls = new Set<string>();
+
+  for (const url of propertyUrls) {
+    try {
+      // Extract property ID from URL (last segment)
+      const propertyId = url.split('/').pop() || url;
+      const existing = await propertyRepo.findById(propertyId);
+      if (existing) {
+        existingUrls.add(url);
+      }
+    } catch (error: any) {
+      // If lookup fails, assume it's new and crawl it
+      logger.warn(`   Warning: Could not check duplicate for ${url}: ${error.message}`);
+    }
+  }
+
+  const urlsToProcess = propertyUrls.filter(url => !existingUrls.has(url));
+
+  logger.info(`   Found ${existingUrls.size} duplicates (already in database)`);
+  logger.info(`   Will crawl ${urlsToProcess.length} new properties`);
+  logger.info(`   Skipping ${existingUrls.size} duplicates (instant skip, saves ~${Math.round(existingUrls.size * 2)} minutes)`);
+  logger.info("=" .repeat(70));
+
+  // Update stats with skipped count
+  stats.propertiesProcessed = existingUrls.size; // Count as processed (skipped)
+  // ============================================================================
+
+  for (let i = 0; i < urlsToProcess.length; i++) {
+    const url = urlsToProcess[i];
     const propertyStartTime = Date.now();
 
     logger.info(`\n${"=".repeat(70)}`);
-    logger.info(`📍 Property ${i + 1}/${propertyUrls.length}: ${url}`);
+    logger.info(`📍 Property ${i + 1}/${urlsToProcess.length}: ${url}`);
     logger.info("=".repeat(70));
 
     let browser = null;
@@ -447,7 +478,7 @@ export async function crawlPropertiesWithFreshBrowser(
     }
 
     // Random delay before next property (except last one)
-    if (i < propertyUrls.length - 1) {
+    if (i < urlsToProcess.length - 1) {
       const delay = browserLaunchDelayMin + Math.random() * (browserLaunchDelayMax - browserLaunchDelayMin);
       const delaySeconds = Math.round(delay / 1000);
       logger.info(`\n⏸️  Waiting ${delaySeconds}s before next property (anti-blocking)...`);
