@@ -16,24 +16,33 @@ export class DuckDBConnection {
   private db: duckdb.Database | null = null;
   private connection: duckdb.Connection | null = null;
   private dbPath: string;
+  private readOnly: boolean;
 
-  constructor(dbPath: string = "./data/databases/properties.duckdb") {
+  constructor(dbPath: string = "./data/databases/properties.duckdb", readOnly: boolean = false) {
     this.dbPath = dbPath;
+    this.readOnly = readOnly;
   }
 
   /**
    * Initialize DuckDB connection and run migrations
    */
   public async initialize(): Promise<void> {
-    // Ensure database directory exists
-    const dbDir = dirname(this.dbPath);
-    if (!existsSync(dbDir)) {
-      mkdirSync(dbDir, { recursive: true });
+    // Ensure database directory exists (only if not read-only)
+    if (!this.readOnly) {
+      const dbDir = dirname(this.dbPath);
+      if (!existsSync(dbDir)) {
+        mkdirSync(dbDir, { recursive: true });
+      }
     }
 
     // Create DuckDB instance with promisified callback
+    // Note: Node.js DuckDB doesn't support OPEN_READONLY - we use access_mode config instead
     this.db = await new Promise<duckdb.Database>((resolve, reject) => {
-      const db = new duckdb.Database(this.dbPath, (err) => {
+      const config: any = {};
+      if (this.readOnly) {
+        config.access_mode = 'READ_ONLY';
+      }
+      const db = new duckdb.Database(this.dbPath, config, (err) => {
         if (err) {
           reject(new Error(`Failed to create DuckDB database: ${err.message}`));
         } else {
@@ -45,10 +54,12 @@ export class DuckDBConnection {
     // Get connection
     this.connection = this.db.connect();
 
-    // Run migrations if needed
-    await this.runMigrations();
+    // Run migrations if needed (skip for read-only mode)
+    if (!this.readOnly) {
+      await this.runMigrations();
+    }
 
-    console.log(`DuckDB database initialized at: ${this.dbPath}`);
+    console.log(`DuckDB database initialized at: ${this.dbPath}${this.readOnly ? ' (read-only)' : ''}`);
   }
 
   /**
@@ -305,10 +316,11 @@ let duckDbInstance: DuckDBConnection | null = null;
 /**
  * Get or create DuckDB connection instance
  */
-export function getDuckDB(dbPath?: string): DuckDBConnection {
+export function getDuckDB(dbPath?: string, readOnly?: boolean): DuckDBConnection {
   if (!duckDbInstance) {
     duckDbInstance = new DuckDBConnection(
-      dbPath || process.env.DUCKDB_PATH || "./data/databases/properties.duckdb"
+      dbPath || process.env.DUCKDB_PATH || "./data/databases/properties.duckdb",
+      readOnly || false
     );
   }
   return duckDbInstance;
@@ -317,8 +329,8 @@ export function getDuckDB(dbPath?: string): DuckDBConnection {
 /**
  * Initialize DuckDB database (convenience function)
  */
-export async function initDuckDB(dbPath?: string): Promise<DuckDBConnection> {
-  const db = getDuckDB(dbPath);
+export async function initDuckDB(dbPath?: string, readOnly?: boolean): Promise<DuckDBConnection> {
+  const db = getDuckDB(dbPath, readOnly);
   await db.initialize();
   return db;
 }

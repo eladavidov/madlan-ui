@@ -26,13 +26,23 @@ export async function createDatabaseConnection(path?: string): Promise<DuckDBCon
 
 // Singleton instance
 let dbInstance: DuckDBConnection | null = null;
+let dbPath: string | null = null;
 
 /**
  * Get or create database connection instance (singleton)
  */
 export async function getDatabase(path?: string): Promise<DuckDBConnection> {
+  const requestedPath = path || getDatabasePath();
+
+  // If requesting a different path, close existing and create new
+  if (dbInstance && dbPath && dbPath !== requestedPath) {
+    await dbInstance.close();
+    dbInstance = null;
+  }
+
   if (!dbInstance) {
-    dbInstance = await createDatabaseConnection(path);
+    dbInstance = await createDatabaseConnection(requestedPath);
+    dbPath = requestedPath;
   }
   return dbInstance;
 }
@@ -40,11 +50,21 @@ export async function getDatabase(path?: string): Promise<DuckDBConnection> {
 /**
  * Initialize database (convenience function)
  * Maintains backward compatibility with existing code
+ * Uses singleton pattern to prevent multiple connections
  */
 export async function initDatabase(dbPath?: string): Promise<DuckDBConnection> {
-  const path = dbPath || getDatabasePath();
-  const db = await createDatabaseConnection(path);
-  return db;
+  return await getDatabase(dbPath);
+}
+
+/**
+ * Close database connection (useful for cleanup)
+ */
+export async function closeDatabaseConnection(): Promise<void> {
+  if (dbInstance) {
+    await dbInstance.close();
+    dbInstance = null;
+    dbPath = null;
+  }
 }
 
 /**
@@ -52,4 +72,5 @@ export async function initDatabase(dbPath?: string): Promise<DuckDBConnection> {
  */
 export function resetDatabaseConnection(): void {
   dbInstance = null;
+  dbPath = null;
 }

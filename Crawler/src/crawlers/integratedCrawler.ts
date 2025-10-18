@@ -47,9 +47,8 @@ export async function runFullCrawl(
   const dbPath = options.dbPath || config.database.path;
 
   if (!options.startPage) {
-    let db;
     try {
-      db = await initDatabase(dbPath);
+      const db = await initDatabase(dbPath);
       const result = await db.queryOne<{ count: number }>("SELECT COUNT(*) as count FROM properties", []);
       const currentProperties = result?.count || 0;
 
@@ -61,16 +60,9 @@ export async function runFullCrawl(
         logger.info(`   Last complete page: ${lastCompletePage}`);
         logger.info(`   Resuming from page: ${calculatedStartPage}`);
       }
+      // Note: Do NOT close the database here - we'll reuse the singleton connection
     } catch (error) {
       logger.warn("Could not auto-detect resume point, starting from page 1");
-    } finally {
-      if (db) {
-        try {
-          db.close();
-        } catch (e) {
-          // Ignore close errors
-        }
-      }
     }
   }
 
