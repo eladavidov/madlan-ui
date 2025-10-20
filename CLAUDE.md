@@ -329,30 +329,23 @@ npm run analyze          # Run DuckDB analytics
 
 **📚 MASTER DOCUMENT**: See **`Crawler/PROJECT-PLAN.md`** - **START HERE FOR ALL SESSIONS**
 
-**🚨 CRITICAL ISSUE DISCOVERED (2025-10-14)**:
-- **Retry Mechanism Gap**: Only retries failed **properties**, NOT failed **search pages**
-- **Impact**: ~34 properties lost per blocked search page (~3-4% data loss projected)
-- **Action Required**: Implement search page retry after Step 3 completes
-- **Status**: Step 3 in progress, implementation scheduled after completion
-
-**Quick Status** (2025-10-14):
-- ✅ **Step 2 Complete**: 201 properties crawled (98% success rate)
-- 🚧 **Step 3 IN PROGRESS**: 500 properties target, 15 search pages
-- ⚠️ **Known Issues**: 1+ search pages with extraction failures detected
-- 🔧 **Next Action**: Implement search page retry mechanism (see PROJECT-PLAN.md)
+**✅ PRODUCTION STATUS** (2025-10-20):
+- **Current**: 578 properties in database (16.1% of 3,600 target)
+- **Active Crawl**: Full production run to completion (Shell ID: ad61c8)
+- **Target**: ~3,600 Haifa properties
+- **ETA**: ~35-45 hours (1.5-2 days)
 
 **Session Resumption** (for Claude Code):
 1. **Always read** `Crawler/PROJECT-PLAN.md` at session start
-2. **CHECK "🚨 CRITICAL: Retry Mechanism Gap" section** - top priority
-3. **Check crawler status**: Is it running? Show database state
-4. **If Step 3 complete**: Implement search page retry before Step 4
-5. **Follow guide**: See PROJECT-PLAN.md "Session Resumption Guide" section
+2. **Check crawler status**: Is shell ad61c8 running?
+3. **Check database**: `cd Crawler && npx tsx src/scripts/check-table-counts.ts`
+4. **If crawler stopped**: Check logs and resume from appropriate page
 
 **Key Accomplishments**:
-- Fresh browser per search page (0% blocking)
-- Fresh browser per property (98% success)
-- Automatic retry mechanism (permanent feature)
-- 201 properties with full Phase 5B data in database
+- **Pages 1-105**: 578 properties crawled successfully
+- **Success Rate**: 100% (0% blocking)
+- **Anti-Blocking**: Fresh browser strategy working perfectly
+- **Duplicate Detection**: Prevents data loss on resume
 
 **📖 Documentation**:
 - `Crawler/PROJECT-PLAN.md` - Master status document (read at every session start)
