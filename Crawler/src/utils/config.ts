@@ -49,8 +49,8 @@ export const config = {
   target: {
     city: process.env.TARGET_CITY || "חיפה",
     maxProperties: parseInt(process.env.MAX_PROPERTIES || "100", 10),
-    // CRITICAL: Correct URL format with required parameters
-    searchUrlTemplate: "https://www.madlan.co.il/for-sale/{city}-%D7%99%D7%A9%D7%A8%D7%90%D7%9C?tracking_search_source=new_search&marketplace=residential",
+    // FIXED: Simpler URL format that actually works
+    searchUrlTemplate: "https://www.madlan.co.il/for-sale/{city}-ישראל",
   },
 
   // Logging

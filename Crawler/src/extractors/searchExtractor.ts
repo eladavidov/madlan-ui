@@ -11,33 +11,69 @@ import { SEARCH_RESULTS_SELECTORS } from "../config/selectors.js";
  */
 export async function extractPropertyUrls(page: Page): Promise<string[]> {
   try {
-    // Wait for property cards to load
-    await page.waitForSelector(SEARCH_RESULTS_SELECTORS.propertyCards, {
-      timeout: 10000,
-    }).catch(() => {
-      console.log("Property cards selector not found, trying alternative...");
+    // NEW APPROACH: Find all links that contain property data (price ₪, rooms חד', size מ"ר)
+    const result = await page.evaluate(() => {
+      const links = Array.from(document.querySelectorAll('a'));
+      const bodyText = document.body.textContent || '';
+
+      // Debug info
+      const debugInfo = {
+        totalLinks: links.length,
+        bodyLength: bodyText.length,
+        hasShekels: bodyText.includes('₪'),
+        hasRooms: bodyText.includes('חד'),
+        hasSize: bodyText.includes('מ"ר'),
+      };
+
+      // Filter links that look like property cards (have price, rooms, size in text)
+      const propertyLinks = links.filter(link => {
+        const text = link.textContent || '';
+        const href = link.getAttribute('href') || '';
+
+        // Property cards have: price (₪), rooms (חד'), size (מ"ר)
+        // Note: The apostrophe might be encoded differently
+        const hasPropertyData = text.includes('₪') && text.includes('חד') && text.includes('מ"ר');
+
+        // Exclude navigation/filter links
+        const isNavigationLink =
+          href.includes('/2-bd') ||
+          href.includes('/3-bd') ||
+          href.includes('/4-bd') ||
+          href.includes('/5-bd') ||
+          href.includes('/secure-room') ||
+          href.endsWith('/for-sale/חיפה-ישראל') ||
+          href.includes('/commercial/');
+
+        return hasPropertyData && !isNavigationLink;
+      });
+
+      return {
+        urls: propertyLinks.map(link => link.href),
+        debug: {
+          ...debugInfo,
+          propertyLinksFound: propertyLinks.length,
+          sampleHref: propertyLinks[0]?.href || 'none',
+          sampleText: propertyLinks[0]?.textContent?.substring(0, 100) || 'none',
+        }
+      };
     });
 
-    // Extract all property links
-    const urls = await page.$$eval(
-      SEARCH_RESULTS_SELECTORS.card.link,
-      (links) => links.map((link) => (link as HTMLAnchorElement).href).filter(Boolean)
-    );
+    const urls = result.urls;
 
-    // Filter to only Madlan property URLs
-    const propertyUrls = urls.filter((url) => {
-      return url.includes("/listings/") || url.includes("/bulletin/");
-    });
+    console.log(`Debug info:`, JSON.stringify(result.debug, null, 2));
+    console.log(`Found ${urls.length} property card links with property data`);
 
     // Make URLs absolute if they're relative
     const baseUrl = page.url();
-    const absoluteUrls = propertyUrls.map((url) => {
+    const absoluteUrls = urls.map((url) => {
       if (url.startsWith("http")) return url;
       return new URL(url, baseUrl).href;
     });
 
     // Deduplicate URLs
     const uniqueUrls = [...new Set(absoluteUrls)];
+
+    console.log(`After deduplication: ${uniqueUrls.length} unique property URLs`);
 
     return uniqueUrls;
   } catch (error) {

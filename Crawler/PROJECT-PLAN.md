@@ -1,64 +1,84 @@
 # Madlan Crawler - Project Status
 
-**Status**: ✅ **IN PRODUCTION** - Crawling to 3,600 Properties
-**Last Updated**: 2025-10-20
-**Current Database**: 578 properties with full Phase 5B enhanced data
+**Status**: ⏸️ **PAUSED** - Phase 2 at 55% Complete (Stopped for Computer Shutdown)
+**Last Updated**: 2025-10-24 18:34
+**Current Database**: 998 properties (625 old + 373 new from last session)
 
 ---
 
-## 📊 CURRENT STATUS
+## 🚨 QUICK RECOVERY GUIDE (Computer Restart / Session Resume)
 
-### Active Production Crawl (2025-10-20)
+### Step 1: Check Crawler Status
+```bash
+# Check if crawler is still running (shell ID: 9cad8a)
+# Look for node process running main.js
+```
 
-**Running Crawler**:
-- **Session ID**: `crawl-1760988620696`
-- **Shell ID**: `ad61c8`
-- **Pages**: 106-305 (200 search pages)
-- **Max Properties**: 5,000
-- **Started**: 2025-10-20 22:30:20
-- **Expected Duration**: ~35-45 hours (1.5-2 days)
+### Step 2: Check Database
+```bash
+cd Crawler && npx tsx src/scripts/check-table-counts.ts
+```
 
-**Current Database** (before current crawl):
-- **Properties**: 578 (16.1% of target)
-- **Transaction History**: 7,915 records
-- **Nearby Schools**: 4,301 records
-- **Neighborhood Ratings**: 573 records
-- **Price Comparisons**: 1,657 records
-- **Construction Projects**: 13,666 records
-- **Images**: Empty (using `--no-images` flag)
-
-**Recent Achievements**:
-- **Pages 1-55**: 530 properties (Step 3 complete)
-- **Pages 56-105**: 48 new properties (Step 4 batch 1)
-- **Combined**: 100% success rate, 0% blocking
-- **Duplicate Detection**: Working perfectly
-
----
-
-## 🚀 PRODUCTION STRATEGY
-
-### Current Approach: Single Long-Running Crawl
-
-**Command** (currently running):
+### Step 3: Resume Crawler (if stopped)
 ```bash
 cd Crawler
-node dist/main.js --city חיפה --start-page 106 --max-pages 200 --max-properties 5000 --no-images
+
+# Current session started with:
+# node dist/main.js --city חיפה --start-page 1 --max-pages 106 --max-properties 3600 --no-images
+
+# Phase 1 extracted 1,517 property URLs (106 pages complete)
+# Phase 2 progress: 743/1,517 properties processed (49%)
+
+# To resume from where it stopped:
+# The crawler will automatically skip already-crawled properties
+# Just restart with same command:
+node dist/main.js --city חיפה --start-page 1 --max-pages 106 --max-properties 3600 --no-images
+
+# Or run in background:
+nohup node dist/main.js --city חיפה --start-page 1 --max-pages 106 --max-properties 3600 --no-images > logs/crawl-resume.log 2>&1 &
 ```
 
-**Why This Works**:
-- Resumes from page 106 (already have 1-105)
-- Keeps all 578 existing properties (duplicate detection prevents overwrites)
-- Will add ~3,000 more properties to reach ~3,600 total
-- Runs continuously until complete
+---
 
-**Monitoring**:
-```bash
-# Check status anytime
-cd Crawler && npx tsx src/scripts/check-table-counts.ts
+## 📊 CURRENT STATUS (2025-10-24 18:34) - SAFELY STOPPED
 
-# View live logs
-tail -f logs/combined.log
-```
+### Last Crawl Session (Stopped Cleanly)
+- **Shell ID**: `9cad8a` (killed safely during wait period)
+- **Started**: 2025-10-22 23:05
+- **Stopped**: 2025-10-24 18:34
+- **Total Runtime**: ~43.5 hours (1.8 days)
+- **Command**: `node dist/main.js --city חיפה --start-page 1 --max-pages 106 --max-properties 3600 --no-images`
+
+### Phase 1: Search URL Extraction ✅ COMPLETE
+- **Status**: 100% Complete (10:04 AM, Oct 23)
+- **Pages Crawled**: 106/106
+- **URLs Extracted**: 1,517 property URLs
+- **Duration**: ~11 hours
+- **Success Rate**: 100%
+
+### Phase 2: Property Crawling ⏸️ PAUSED (SAFE TO RESUME)
+- **Progress**: 835/1,517 properties (55%)
+- **Success**: 373 new properties crawled
+- **Duplicates**: 455 skipped (already in DB)
+- **Failures**: 7 (0.84% - excellent!)
+- **Duration**: ~32.5 hours before stop
+- **Rate**: ~0.3 properties/min (variable)
+
+### Database Status (VERIFIED SAFE)
+- **Total Properties**: 998 ✅ ALL SAVED
+  - 625 from previous crawls
+  - 373 new from last session
+- **Transaction History**: 11,307 records
+- **Schools**: 6,028 records
+- **Ratings**: 985 records
+- **Price Comparisons**: 2,382 records
+- **Construction Projects**: 19,488 records
+- **Images**: 0 (--no-images flag active)
+
+### Remaining Work
+- **Properties Left**: 682 (1,517 - 835)
+- **Estimated Time**: ~38 hours at 0.3 props/min
+- **Expected Finish**: ~1.6 days after resume
 
 ---
 
@@ -81,107 +101,120 @@ TARGET_CITY=חיפה
 MAX_PROPERTIES=3600
 ```
 
-### CLI Flags
+### CLI Command Explained
 ```bash
---city חיפה              # Target city
---start-page N           # Resume from specific page
---max-pages N            # Number of search pages to crawl
---max-properties N       # Limit properties per crawl (use high number for full crawl)
---no-images              # Skip image downloads (recommended)
+--city חיפה              # Target: Haifa properties
+--start-page 1           # Start from page 1 (Phase 1)
+--max-pages 106          # Crawl 106 search pages
+--max-properties 3600    # Target up to 3,600 properties
+--no-images              # Skip image downloads (faster)
 ```
 
 ---
 
 ## 🔧 KEY FEATURES
 
-### Anti-Blocking (100% Success Rate)
-- **Fresh Browser Per Search Page**: Bypasses PerimeterX pagination detection
+### Anti-Blocking Strategy (99.73% Success Rate)
+- **Fresh Browser Per Search Page**: New browser for each search results page
 - **Fresh Browser Per Property**: Complete isolation per property
 - **Random Delays**: 60-120s between operations
-- **Israeli Locale**: Hebrew locale + language priority
-- **Enhanced Human Behavior**: Scrolling, reading time, mouse movements
-- **Headless=False**: Required for PerimeterX bypass
+- **Israeli Locale**: Hebrew locale (he-IL) simulation
+- **Human Behavior**: Scrolling, mouse movements, reading time
+- **Headless=False**: Required to bypass PerimeterX
 
-### Automatic Recovery
-- **Property Retry**: Failed properties automatically retried
-- **Search Page Retry**: Failed search pages automatically retried
+### Automatic Recovery & Retry
+- **Duplicate Detection**: Checks database before crawling
+- **Property Retry**: Auto-retry on timeout/errors
+- **Resume Capability**: Restarts from interruption point
 
-### Duplicate Detection
-- **Pre-Crawl Check**: Queries database before launching browsers
-- **Instant Skip**: Skips duplicates in milliseconds
-- **Data Preservation**: Never overwrites existing properties
+### Phase 5B Enhanced Data Extraction
+- **38 property fields** + 11 amenities
+- Transaction history (when available)
+- Nearby schools (when available)
+- Neighborhood ratings
+- Price comparisons
+- Construction projects in area
 
 ---
 
 ## 📁 KEY FILES
 
 ### Core Crawler
-- `src/main.ts` - Entry point with CLI parsing
-- `src/crawlers/integratedCrawler.ts` - Orchestrates search + property crawling
-- `src/crawlers/searchCrawler.ts` - Search results crawler with retry
-- `src/crawlers/singleBrowserCrawler.ts` - Property crawler with duplicate detection + retry
+- `src/main.ts` - CLI entry point
+- `src/crawlers/integratedCrawler.ts` - Orchestrates Phase 1 & 2
+- `src/crawlers/searchCrawler.ts` - Search results crawler
+- `src/crawlers/singleBrowserCrawler.ts` - Property crawler with duplicate detection
 
-### Extractors (Phase 5B Enhanced Data)
-- `src/extractors/propertyExtractor.ts` - Property data (38 fields + 11 amenities)
+### Extractors
+- `src/extractors/searchExtractor.ts` - Extract property URLs from search pages
+- `src/extractors/propertyExtractor.ts` - Extract property data (38 fields)
 - `src/extractors/transactionExtractor.ts` - Transaction history
 - `src/extractors/schoolsExtractor.ts` - Nearby schools
 - `src/extractors/ratingsExtractor.ts` - Neighborhood ratings
 - `src/extractors/priceComparisonExtractor.ts` - Price comparisons
 - `src/extractors/constructionExtractor.ts` - Construction projects
 
-### Verification
-- `src/scripts/check-table-counts.ts` - Quick database status check
+### Database & Utilities
+- `src/repositories/` - DuckDB data access layer
+- `src/scripts/check-table-counts.ts` - Quick status check
+- `src/utils/config.ts` - Configuration settings
 
 ---
 
-## 📊 PERFORMANCE METRICS
+## 📊 TROUBLESHOOTING
+
+### If Crawler Stopped
+1. **Check logs**: `tail -100 logs/combined.log`
+2. **Check database**: `npx tsx src/scripts/check-table-counts.ts`
+3. **Check for errors**: Look for `❌` or `ERROR` in logs
+4. **Resume**: Run same command (duplicate detection will skip already-crawled)
+
+### Common Issues
+- **Timeout errors**: Normal occasional issue, crawler auto-retries
+- **PerimeterX blocking**: Should be 0% with current config
+- **Database locked**: Wait for crawler to finish or kill process
+
+### Monitoring Live Crawl
+```bash
+# View live logs
+tail -f logs/combined.log
+
+# Check progress (every 15 seconds in logs)
+grep "Progress Update" logs/combined.log | tail -1
+
+# Check latest property
+grep "Properties: [0-9]* found" logs/combined.log | tail -1
+```
+
+---
+
+## 🎯 PRODUCTION TARGET
+
+**Target**: Haifa properties for sale
+**Total Available**: ~1,517 properties (discovered in Phase 1)
+**Search URL**: https://www.madlan.co.il/for-sale/חיפה-ישראל
+
+**Note**: Original estimate was 3,600 but actual available properties is ~1,517 based on Phase 1 extraction.
+
+---
+
+## 📈 PERFORMANCE METRICS
 
 ### Success Rates
-- **Search Pages**: 100% (105/105 pages validated)
-- **Property Crawling**: 100% with retry mechanism
-- **Blocking Rate**: 0% (zero PerimeterX blocks)
+- **Phase 1 (Search)**: 100% (106/106 pages)
+- **Phase 2 (Properties)**: 99.73% (741 success / 743 total)
+- **Overall Blocking**: 0.27% (2 timeouts out of 743)
 
-### Data Coverage
+### Data Coverage (Phase 5B)
 - **Properties**: 100% (all successful crawls)
 - **Neighborhood Ratings**: 99%+ coverage
-- **Transaction History**: ~14 per property (when available)
-- **Schools**: ~7.5 per property (when available)
-- **Price Comparisons**: ~2.9 per property (when available)
-- **Construction Projects**: ~24 per property (when available)
-
-### Timeline
-| Target | Current | Remaining | ETA |
-|--------|---------|-----------|-----|
-| 3,600 properties | 578 | 3,022 | ~35-45 hours |
+- **Transaction History**: Available when exists on property page
+- **Schools**: Available when exists on property page
+- **Price Comparisons**: Available when exists on property page
+- **Construction Projects**: Available when exists on property page
 
 ---
 
-## 📞 SESSION RESUMPTION GUIDE
-
-**For Claude Code - Quick Start:**
-
-1. **Check crawler status**:
-   ```bash
-   # Is crawler running? Check shell ad61c8
-   # If stopped, check exit code and logs
-   ```
-
-2. **Check database**:
-   ```bash
-   cd Crawler && npx tsx src/scripts/check-table-counts.ts
-   ```
-
-3. **Resume if needed** (if crawler stopped):
-   ```bash
-   cd Crawler
-   # Check current property count to determine start page
-   # ~578 properties = page 106 (already running)
-   # If >578, adjust start page accordingly
-   node dist/main.js --city חיפה --start-page [NEXT_PAGE] --max-pages 200 --max-properties 5000 --no-images
-   ```
-
----
-
-**Production Target**: Haifa properties for sale (~3,600 total)
-**Search URL**: https://www.madlan.co.il/for-sale/חיפה-ישראל
-**Current Action**: Full production crawl in progress (pages 106-305)
+**Last Verified**: 2025-10-23 22:30:38
+**Status**: Running smoothly, 99.73% success rate
+**Next Milestone**: Complete remaining 774 properties (~31 hours)
