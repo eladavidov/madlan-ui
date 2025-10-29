@@ -400,6 +400,45 @@ CREATE INDEX IF NOT EXISTS idx_sessions_start_time ON crawl_sessions(start_time)
 CREATE INDEX IF NOT EXISTS idx_sessions_status ON crawl_sessions(status);
 
 -- ============================================================================
+-- PROPERTY_URLS_CACHE TABLE
+-- ============================================================================
+
+CREATE TABLE IF NOT EXISTS property_urls_cache (
+  id INTEGER PRIMARY KEY,
+  url VARCHAR UNIQUE NOT NULL,
+
+  -- Search context
+  search_page INTEGER NOT NULL,
+  city VARCHAR NOT NULL,
+
+  -- Status tracking
+  discovered_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  processed BOOLEAN DEFAULT FALSE,
+  processed_at TIMESTAMP,
+
+  -- Result tracking
+  crawl_successful BOOLEAN,
+  error_message TEXT
+);
+
+COMMENT ON TABLE property_urls_cache IS 'Caches property URLs discovered during Phase 1 search crawling - enables fast resume after crashes without re-crawling search pages';
+
+COMMENT ON COLUMN property_urls_cache.id IS 'Auto-incrementing primary key';
+COMMENT ON COLUMN property_urls_cache.url IS 'Full Madlan property page URL discovered from search results';
+COMMENT ON COLUMN property_urls_cache.search_page IS 'Which search results page this URL was found on (1-106)';
+COMMENT ON COLUMN property_urls_cache.city IS 'City this URL belongs to (e.g., "חיפה")';
+COMMENT ON COLUMN property_urls_cache.discovered_at IS 'When this URL was discovered during Phase 1 search crawl';
+COMMENT ON COLUMN property_urls_cache.processed IS 'TRUE if this URL has been processed in Phase 2 property crawl';
+COMMENT ON COLUMN property_urls_cache.processed_at IS 'When this URL was successfully crawled in Phase 2';
+COMMENT ON COLUMN property_urls_cache.crawl_successful IS 'TRUE if property data was successfully extracted, FALSE if failed, NULL if not yet processed';
+COMMENT ON COLUMN property_urls_cache.error_message IS 'Error message if property crawl failed';
+
+CREATE INDEX IF NOT EXISTS idx_url_cache_city ON property_urls_cache(city);
+CREATE INDEX IF NOT EXISTS idx_url_cache_processed ON property_urls_cache(processed);
+CREATE INDEX IF NOT EXISTS idx_url_cache_search_page ON property_urls_cache(search_page);
+CREATE INDEX IF NOT EXISTS idx_url_cache_discovered ON property_urls_cache(discovered_at);
+
+-- ============================================================================
 -- CRAWL_ERRORS TABLE
 -- ============================================================================
 

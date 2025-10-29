@@ -20,6 +20,7 @@ import {
   extractPropertiesFromApiResponses,
   type CapturedApiData,
 } from "../utils/networkCapture.js";
+import type { PropertyUrlCacheRepository } from "../database/repositories/PropertyUrlCacheRepository.js";
 
 // Enable stealth plugin
 chromium.use(StealthPlugin());
@@ -28,6 +29,8 @@ export interface SearchCrawlerOptions {
   maxPages?: number;
   startPage?: number;
   onPropertiesFound?: (urls: string[]) => void | Promise<void>;
+  urlCacheRepo?: PropertyUrlCacheRepository;
+  city?: string;
 }
 
 /**
@@ -298,7 +301,7 @@ export async function crawlSearchResults(
   baseSearchUrl: string,
   options: SearchCrawlerOptions = {}
 ): Promise<string[]> {
-  const { maxPages = 10, startPage = 1, onPropertiesFound } = options;
+  const { maxPages = 10, startPage = 1, onPropertiesFound, urlCacheRepo, city } = options;
   const allPropertyUrls: string[] = [];
 
   // PHASE 3: Track failed pages for retry
@@ -344,6 +347,16 @@ export async function crawlSearchResults(
       await crawler.run([pageUrl]);
 
       logger.info(`✅ Page ${pageNumber} complete: ${pageUrls.length} URLs extracted`);
+
+      // Save URLs to cache if repository provided
+      if (urlCacheRepo && city && pageUrls.length > 0) {
+        try {
+          const saved = await urlCacheRepo.saveBatch(pageUrls, pageNumber, city);
+          logger.info(`💾 Saved ${saved} URLs to cache for page ${pageNumber}`);
+        } catch (error: any) {
+          logger.warn(`⚠️ Failed to save URLs to cache: ${error.message}`);
+        }
+      }
 
       // PHASE 3: Detect silent failures (0 URLs extracted)
       if (pageUrls.length === 0) {

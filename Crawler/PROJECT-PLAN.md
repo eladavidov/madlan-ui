@@ -1,42 +1,60 @@
 # Madlan Crawler - Project Status
 
-**Status**: ⏸️ **PAUSED** - Phase 2 at 55% Complete (Stopped for Computer Shutdown)
-**Last Updated**: 2025-10-24 18:34
-**Current Database**: 998 properties (625 old + 373 new from last session)
+**Status**: ✅ **RUNNING** - Production Crawl Resumed
+**Last Updated**: 2025-10-28 20:49
+**Current Database**: 1,419 properties ✅
+**Shell ID**: b13ad7
 
 ---
 
-## 🚨 QUICK RECOVERY GUIDE (Computer Restart / Session Resume)
+## 🚨 QUICK RECOVERY GUIDE (After VSCode Restart / Session Resume)
 
-### Step 1: Check Crawler Status
+### ✅ ISSUE RESOLVED (2025-10-28 20:49)
+**Problem**: Crawler was stuck at "Initializing DuckDB database..."
+**Root Cause**: Stale process + corrupted log file
+**Solution**: Kill stuck process + delete logs/combined.log
+**Status**: Crawler now running successfully
+
+### Step 1: Kill Any Stuck Crawler Processes (if needed)
 ```bash
-# Check if crawler is still running (shell ID: 9cad8a)
-# Look for node process running main.js
+# Find node processes
+tasklist | findstr node
+
+# Kill stuck crawler (look for large process ~80-100MB)
+taskkill //F //PID <process_id>
 ```
 
-### Step 2: Check Database
+### Step 2: Verify Database Is Intact
 ```bash
-cd Crawler && npx tsx src/scripts/check-table-counts.ts
+cd Crawler
+node -e "const duckdb = require('duckdb'); const db = new duckdb.Database('./data/databases/properties.duckdb'); db.all('SELECT COUNT(*) as total FROM properties', (err, res) => { if(err) console.error(err); else console.log('✅ Database:', res[0].total, 'properties'); process.exit(0); });"
 ```
 
-### Step 3: Resume Crawler (if stopped)
+**Expected**: Should show 1,419 properties
+
+### Step 3: Resume Crawler Carefully
 ```bash
 cd Crawler
 
-# Current session started with:
-# node dist/main.js --city חיפה --start-page 1 --max-pages 106 --max-properties 3600 --no-images
-
-# Phase 1 extracted 1,517 property URLs (106 pages complete)
-# Phase 2 progress: 743/1,517 properties processed (49%)
-
-# To resume from where it stopped:
-# The crawler will automatically skip already-crawled properties
-# Just restart with same command:
+# RECOMMENDED: Start in foreground first to monitor for issues
 node dist/main.js --city חיפה --start-page 1 --max-pages 106 --max-properties 3600 --no-images
 
-# Or run in background:
-nohup node dist/main.js --city חיפה --start-page 1 --max-pages 106 --max-properties 3600 --no-images > logs/crawl-resume.log 2>&1 &
+# Watch logs in another terminal:
+# tail -f logs/combined.log
+
+# If crawler gets stuck at "Initializing DuckDB database..." or during wait period:
+# 1. Kill the process (Ctrl+C or taskkill)
+# 2. Check if database file is locked
+# 3. Try deleting logs/combined.log before restart
+# 4. May need to investigate wait loop bug in code
 ```
+
+### Step 4: Monitor for Stuck State
+**Watch for these signs of stuck crawler:**
+- ❌ No logs after "Initializing DuckDB database..." (>1 minute)
+- ❌ Stuck after "Waiting XXs before next property" (>2 minutes past wait time)
+- ❌ Only progress updates logging, no actual property processing
+- ✅ Normal: Should see "Launching browser", "Extracted: XXXXX", "Saved X transactions", etc.
 
 ---
 
@@ -185,6 +203,41 @@ grep "Progress Update" logs/combined.log | tail -1
 # Check latest property
 grep "Properties: [0-9]* found" logs/combined.log | tail -1
 ```
+
+### Weekly Database Backup
+
+**When to Create**: Every Monday or when convenient (weekly reminder during status checks)
+
+**⚠️ IMPORTANT**: Stop the crawler before creating backup (database must not be in use)
+
+```bash
+# 1. Stop the crawler (if running)
+# Press Ctrl+C or use taskkill
+
+# 2. Create backup
+cd Crawler
+npx tsx src/scripts/create-weekly-backup.ts
+
+# 3. Restart crawler after backup completes
+```
+
+**What it does**:
+- Creates backup with format: `weekly-backup-DD-MM-YYYY.duckdb` (Hebrew date format)
+  - Example: `weekly-backup-29-10-2025.duckdb`
+- Automatically deletes old weekly backups (keeps only latest)
+- Shows git commit instructions
+
+**Then commit to Git**:
+```bash
+git add data/databases/weekly-backup-*.duckdb
+git commit -m "chore: weekly database backup (DD-MM-YYYY)"
+git push
+```
+
+**Testing Reminder**: When running "status" checks, consider if it's been a week since last backup. Weekly backups ensure:
+- Safe recovery point if database gets corrupted
+- Historical snapshots of crawler progress
+- Easy rollback if issues occur during development
 
 ---
 

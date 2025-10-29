@@ -8,6 +8,7 @@ import { crawlSearchResults } from "./searchCrawler.js";
 import { crawlProperties } from "./propertyCrawler.js";
 import { crawlPropertiesWithFreshBrowser } from "./singleBrowserCrawler.js";
 import { CrawlSessionRepository } from "../database/repositories/CrawlSessionRepository.js";
+import { PropertyUrlCacheRepository } from "../database/repositories/PropertyUrlCacheRepository.js";
 import { ProgressReporter } from "../utils/progressReporter.js";
 import { logger } from "../utils/logger.js";
 import { config } from "../utils/config.js";
@@ -107,21 +108,58 @@ export async function runFullCrawl(
     logger.info("Initializing DuckDB database...");
     const db = await initDatabase(dbPath);
     const sessionRepo = new CrawlSessionRepository(db);
+    const urlCacheRepo = new PropertyUrlCacheRepository(db);
 
     // Start session
     await sessionRepo.startSession(sessionId, city, maxProperties);
 
-    // Phase 1: Crawl search results
-    logger.info("\n📋 Phase 1: Crawling search results...");
-    const propertyUrls = await crawlSearchResults(actualSearchUrl, {
-      maxPages: maxSearchPages,
-      startPage: startPage,
-      onPropertiesFound: (urls) => {
-        logger.info(`  → Batch: ${urls.length} property URLs extracted`);
-      },
-    });
+    // Check URL cache first
+    const cacheStats = await urlCacheRepo.getStats(city);
+    const cacheComplete = await urlCacheRepo.isPhase1Complete(city, maxSearchPages);
 
-    logger.info(`\n✅ Search complete: ${propertyUrls.length} property URLs found`);
+    let propertyUrls: string[] = [];
+
+    if (cacheComplete && cacheStats.total > 0) {
+      // Phase 1 already complete - use cache
+      logger.info("\n💾 Phase 1: Using cached URLs (Phase 1 complete)");
+      logger.info(`   ✅ Cache has ${cacheStats.total} URLs from ${cacheStats.lastPage} pages`);
+      logger.info(`   ⏭️  Skipping Phase 1 search crawl (saving ~${Math.round(maxSearchPages * 2)}+ minutes)`);
+
+      propertyUrls = await urlCacheRepo.getAllUrls(city);
+      logger.info(`\n✅ Loaded ${propertyUrls.length} URLs from cache`);
+    } else {
+      // Phase 1: Crawl search results (with caching)
+      const lastPage = cacheStats.lastPage;
+      const resumeFromPage = lastPage > 0 ? lastPage + 1 : startPage;
+
+      if (lastPage > 0) {
+        logger.info(`\n📋 Phase 1: Resuming search crawl from page ${resumeFromPage}/${maxSearchPages}`);
+        logger.info(`   💾 Cache has ${cacheStats.total} URLs from pages 1-${lastPage}`);
+        logger.info(`   🔄 Will crawl pages ${resumeFromPage}-${maxSearchPages}`);
+      } else {
+        logger.info("\n📋 Phase 1: Crawling search results...");
+      }
+
+      const newUrls = await crawlSearchResults(actualSearchUrl, {
+        maxPages: maxSearchPages - lastPage,
+        startPage: resumeFromPage,
+        urlCacheRepo: urlCacheRepo,
+        city: city,
+        onPropertiesFound: (urls) => {
+          logger.info(`  → Batch: ${urls.length} property URLs extracted`);
+        },
+      });
+
+      // Combine cached + new URLs
+      if (lastPage > 0) {
+        const cachedUrls = await urlCacheRepo.getAllUrls(city);
+        propertyUrls = [...cachedUrls, ...newUrls];
+        logger.info(`\n✅ Search complete: ${newUrls.length} new + ${cachedUrls.length} cached = ${propertyUrls.length} total URLs`);
+      } else {
+        propertyUrls = newUrls;
+        logger.info(`\n✅ Search complete: ${propertyUrls.length} property URLs found`);
+      }
+    }
 
     // Post-crawl validation: Check if actual count matches expected
     const expectedPropertiesPerPage = 34; // Typical Madlan search results per page

@@ -13,6 +13,9 @@ data/images/
 data/exports/
 data/cache/
 
+# Weekly backups exception (commit these)
+!data/databases/weekly-backup-*.duckdb
+
 # Logs
 logs/
 *.log
