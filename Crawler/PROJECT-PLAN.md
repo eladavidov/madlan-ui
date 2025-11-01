@@ -1,19 +1,19 @@
 # Madlan Crawler - Project Status
 
-**Status**: ✅ **RUNNING** - Production Crawl Resumed
-**Last Updated**: 2025-10-28 20:49
-**Current Database**: 1,419 properties ✅
-**Shell ID**: b13ad7
+**Status**: ✅ **RUNNING** - Extended Crawl (Pages 94-200)
+**Last Updated**: 2025-10-31 18:05
+**Current Database**: 1,787 properties ✅
+**Shell ID**: 94c60a
 
 ---
 
 ## 🚨 QUICK RECOVERY GUIDE (After VSCode Restart / Session Resume)
 
-### ✅ ISSUE RESOLVED (2025-10-28 20:49)
-**Problem**: Crawler was stuck at "Initializing DuckDB database..."
-**Root Cause**: Stale process + corrupted log file
-**Solution**: Kill stuck process + delete logs/combined.log
-**Status**: Crawler now running successfully
+### ✅ LATEST SESSION (2025-10-31 17:57)
+**Action**: Extended crawl to pages 94-200 (targeting 3,600 properties)
+**Previous**: Completed pages 1-106 with 1,787 properties
+**Current**: Phase 1 actively crawling pages 94-200
+**Status**: Running successfully with 100% success rate
 
 ### Step 1: Kill Any Stuck Crawler Processes (if needed)
 ```bash
@@ -27,26 +27,25 @@ taskkill //F //PID <process_id>
 ### Step 2: Verify Database Is Intact
 ```bash
 cd Crawler
-node -e "const duckdb = require('duckdb'); const db = new duckdb.Database('./data/databases/properties.duckdb'); db.all('SELECT COUNT(*) as total FROM properties', (err, res) => { if(err) console.error(err); else console.log('✅ Database:', res[0].total, 'properties'); process.exit(0); });"
+npx tsx src/scripts/check-table-counts.ts
 ```
 
-**Expected**: Should show 1,419 properties
+**Expected**: Should show 1,787+ properties (growing as crawler runs)
 
-### Step 3: Resume Crawler Carefully
+### Step 3: Resume Crawler (if stopped)
 ```bash
 cd Crawler
 
-# RECOMMENDED: Start in foreground first to monitor for issues
-node dist/main.js --city חיפה --start-page 1 --max-pages 106 --max-properties 3600 --no-images
+# Extended crawl command (200 pages to reach 3,600 properties)
+node dist/main.js --city חיפה --start-page 1 --max-pages 200 --max-properties 3600 --no-images
 
 # Watch logs in another terminal:
 # tail -f logs/combined.log
 
-# If crawler gets stuck at "Initializing DuckDB database..." or during wait period:
-# 1. Kill the process (Ctrl+C or taskkill)
-# 2. Check if database file is locked
-# 3. Try deleting logs/combined.log before restart
-# 4. May need to investigate wait loop bug in code
+# Crawler will:
+# - Resume from last completed page (smart caching)
+# - Skip duplicate properties automatically
+# - Continue until 3,600 properties or 200 pages complete
 ```
 
 ### Step 4: Monitor for Stuck State
@@ -58,45 +57,39 @@ node dist/main.js --city חיפה --start-page 1 --max-pages 106 --max-propertie
 
 ---
 
-## 📊 CURRENT STATUS (2025-10-24 18:34) - SAFELY STOPPED
+## 📊 CURRENT STATUS (2025-10-31 18:05) - RUNNING EXTENDED CRAWL
 
-### Last Crawl Session (Stopped Cleanly)
-- **Shell ID**: `9cad8a` (killed safely during wait period)
-- **Started**: 2025-10-22 23:05
-- **Stopped**: 2025-10-24 18:34
-- **Total Runtime**: ~43.5 hours (1.8 days)
-- **Command**: `node dist/main.js --city חיפה --start-page 1 --max-pages 106 --max-properties 3600 --no-images`
+### Active Crawl Session
+- **Shell ID**: `94c60a`
+- **Started**: 2025-10-31 17:57
+- **Session ID**: `crawl-1761926224047`
+- **Command**: `node dist/main.js --city חיפה --start-page 1 --max-pages 200 --max-properties 3600 --no-images`
 
-### Phase 1: Search URL Extraction ✅ COMPLETE
-- **Status**: 100% Complete (10:04 AM, Oct 23)
-- **Pages Crawled**: 106/106
-- **URLs Extracted**: 1,517 property URLs
-- **Duration**: ~11 hours
+### Phase 1: Search URL Extraction 🔄 IN PROGRESS (Extended)
+- **Status**: Pages 94-97 complete (as of 18:05)
+- **Target**: 200 pages (expanded from original 106)
+- **Pages Completed**: 97/200 (48.5%)
+- **Progress**: Actively crawling page-by-page
 - **Success Rate**: 100%
 
-### Phase 2: Property Crawling ⏸️ PAUSED (SAFE TO RESUME)
-- **Progress**: 835/1,517 properties (55%)
-- **Success**: 373 new properties crawled
-- **Duplicates**: 455 skipped (already in DB)
-- **Failures**: 7 (0.84% - excellent!)
-- **Duration**: ~32.5 hours before stop
-- **Rate**: ~0.3 properties/min (variable)
+### Phase 2: Property Crawling ⏳ PENDING
+- **Will Start**: After Phase 1 completes all 200 pages
+- **Expected URLs**: ~1,800 total property URLs (9 per page × 200)
+- **Current Database**: 1,787 properties ✅
 
 ### Database Status (VERIFIED SAFE)
-- **Total Properties**: 998 ✅ ALL SAVED
-  - 625 from previous crawls
-  - 373 new from last session
-- **Transaction History**: 11,307 records
-- **Schools**: 6,028 records
-- **Ratings**: 985 records
-- **Price Comparisons**: 2,382 records
-- **Construction Projects**: 19,488 records
+- **Total Properties**: 1,787 ✅ (Updated 2025-10-31)
+- **Transaction History**: 17,500+ records
+- **Schools**: 9,500+ records
+- **Ratings**: 1,745+ records
+- **Price Comparisons**: 3,745+ records
+- **Construction Projects**: 30,496+ records
 - **Images**: 0 (--no-images flag active)
 
-### Remaining Work
-- **Properties Left**: 682 (1,517 - 835)
-- **Estimated Time**: ~38 hours at 0.3 props/min
-- **Expected Finish**: ~1.6 days after resume
+### Estimated Completion
+- **Phase 1 ETA**: ~3-4 hours (103 pages × 2 min/page)
+- **Phase 2 ETA**: Variable based on new vs duplicate properties
+- **Target**: Reach 3,600 total properties
 
 ---
 
@@ -123,7 +116,7 @@ MAX_PROPERTIES=3600
 ```bash
 --city חיפה              # Target: Haifa properties
 --start-page 1           # Start from page 1 (Phase 1)
---max-pages 106          # Crawl 106 search pages
+--max-pages 200          # Crawl 200 search pages (extended from 106)
 --max-properties 3600    # Target up to 3,600 properties
 --no-images              # Skip image downloads (faster)
 ```
@@ -244,10 +237,14 @@ git push
 ## 🎯 PRODUCTION TARGET
 
 **Target**: Haifa properties for sale
-**Total Available**: ~1,517 properties (discovered in Phase 1)
+**Goal**: 3,600 properties (extended crawl)
 **Search URL**: https://www.madlan.co.il/for-sale/חיפה-ישראל
+**Strategy**: Crawling 200 pages to discover more properties
 
-**Note**: Original estimate was 3,600 but actual available properties is ~1,517 based on Phase 1 extraction.
+**Progress**:
+- Pages 1-106: Yielded ~1,517 unique property URLs
+- Pages 107-200: Currently crawling to find additional properties
+- Current Database: 1,787 properties (ongoing)
 
 ---
 
@@ -268,6 +265,6 @@ git push
 
 ---
 
-**Last Verified**: 2025-10-23 22:30:38
-**Status**: Running smoothly, 99.73% success rate
-**Next Milestone**: Complete remaining 774 properties (~31 hours)
+**Last Verified**: 2025-10-31 18:05:00
+**Status**: Extended crawl running (pages 94-200)
+**Next Milestone**: Complete Phase 1 (200 pages), then process all properties to reach 3,600 total

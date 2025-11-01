@@ -74,6 +74,9 @@ next-env.d.ts
 ehthumbs.db
 Thumbs.db
 
+# Windows reserved device names
+nul
+
 # Claude Code settings
 .claude/
 Crawler/data/databases/properties.duckdb.wal

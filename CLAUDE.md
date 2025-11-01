@@ -329,32 +329,32 @@ npm run analyze          # Run DuckDB analytics
 
 **📚 MASTER DOCUMENT**: See **`Crawler/PROJECT-PLAN.md`** - **START HERE FOR ALL SESSIONS**
 
-**⏸️ PAUSED STATUS** (2025-10-24 18:34 - Safely Stopped for Computer Shutdown):
-- **Current**: 998 properties in database ✅ ALL SAVED
-- **Last Session**: Phase 2 paused at 835/1,517 (55% complete)
-- **Shell ID**: `9cad8a` (safely killed during wait period - no data loss)
-- **Success Rate**: 99.16% (only 7 failures out of 835)
-- **Remaining**: 682 properties (~38 hours / 1.6 days)
+**✅ ACTIVE STATUS** (2025-10-31 18:05 - Extended Crawl Running):
+- **Current**: 1,787 properties in database ✅
+- **Session**: Phase 1 crawling pages 94-200 (extended from 106)
+- **Shell ID**: `94c60a` (active crawler)
+- **Success Rate**: 100% (no blocking detected)
+- **Target**: 3,600 total properties
 
 **🚨 CRITICAL - Session Resumption** (for Claude Code after computer restart):
 1. **FIRST**: Read `Crawler/PROJECT-PLAN.md` for exact latest status
 2. **Check database**: `cd Crawler && npx tsx src/scripts/check-table-counts.ts`
-   - Should show 998 properties
-3. **Resume crawler with SAME command**:
+   - Should show 1,787+ properties (growing as crawler runs)
+3. **Resume crawler with EXTENDED command**:
    ```bash
    cd Crawler
-   node dist/main.js --city חיפה --start-page 1 --max-pages 106 --max-properties 3600 --no-images
+   node dist/main.js --city חיפה --start-page 1 --max-pages 200 --max-properties 3600 --no-images
    ```
-   - ✅ Duplicate detection will skip all 835 already-crawled properties
-   - ✅ Will automatically continue from property #836
-   - ✅ No data loss - all 998 properties are safely in database
+   - ✅ Smart resume: Will continue from last completed page
+   - ✅ Duplicate detection: Skips already-crawled properties
+   - ✅ Target: 3,600 total properties across 200 pages
 
-**Final Progress Before Stop**:
-- **Phase 1**: ✅ Complete (1,517 URLs extracted from 106 pages)
-- **Phase 2**: ⏸️ 55% (835/1,517 properties processed)
-- **Anti-Blocking**: Working perfectly (99.16% success)
-- **Duplicate Detection**: Working perfectly (455 old + 835 new = all tracked)
-- **Runtime**: 43.5 hours continuous operation before safe shutdown
+**Current Session Progress** (2025-10-31):
+- **Phase 1**: 🔄 In Progress (Pages 94-200, targeting ~1,800 total URLs)
+- **Previous Sessions**: 1,787 properties collected from pages 1-106
+- **Anti-Blocking**: Working perfectly (100% success rate)
+- **Duplicate Detection**: Working perfectly (skips already-crawled properties)
+- **Expected Runtime**: Crawler will run continuously until 3,600 properties or 200 pages complete
 
 **📖 Documentation**:
 - `Crawler/PROJECT-PLAN.md` - Master status document (read at every session start)
