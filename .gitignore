@@ -79,5 +79,9 @@ nul
 
 # Claude Code settings
 .claude/
+
+# Crawler databases (exclude active DB, allow compressed backups)
+Crawler/data/databases/properties.duckdb
 Crawler/data/databases/properties.duckdb.wal
-Crawler/data/databases/properties.duckdb.backup-2025-10-17
+Crawler/data/databases/*.duckdb
+!Crawler/data/databases/*.duckdb.gz
