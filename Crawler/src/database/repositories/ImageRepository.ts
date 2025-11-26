@@ -125,23 +125,23 @@ export class ImageRepository {
    * Count images for a property
    */
   public async countByPropertyId(propertyId: string): Promise<number> {
-    const result = await this.db.queryOne<{ count: number }>(
+    const result = await this.db.queryOne<{ count: number | bigint }>(
       "SELECT COUNT(*) as count FROM property_images WHERE property_id = ?",
       [propertyId]
     );
-    return result?.count || 0;
+    return result?.count ? Number(result.count) : 0;
   }
 
   /**
    * Count downloaded images for a property
    */
   public async countDownloadedByPropertyId(propertyId: string): Promise<number> {
-    const result = await this.db.queryOne<{ count: number }>(
+    const result = await this.db.queryOne<{ count: number | bigint }>(
       `SELECT COUNT(*) as count FROM property_images
        WHERE property_id = ? AND is_downloaded = 1`,
       [propertyId]
     );
-    return result?.count || 0;
+    return result?.count ? Number(result.count) : 0;
   }
 
   /**

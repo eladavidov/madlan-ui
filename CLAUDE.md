@@ -49,13 +49,11 @@ A production-ready web crawler built with **Crawlee + Playwright** to scrape pro
 - `Crawler/docs/RESEARCH.md` - Website structure research (Phase 1)
 
 **Technology Stack**:
-- **Crawlee** - Web scraping framework (wraps Playwright)
-- **Playwright** - Browser automation
-- **SQLite** - Primary database for property data
-- **DuckDB** - Analytical database for queries/reports
+- **Crawlee + Playwright** - Browser automation
+- **DuckDB** - Property database
 - **TypeScript** - Type-safe development
 
-**Status**: ✅ Phases 0-5 Complete - **Production Ready** (Anti-blocking solved!)
+**Status**: ✅ **COMPLETE** - 1,792 properties with 27,585 images (2025-11-26)
 
 ## Development Commands
 
@@ -245,307 +243,40 @@ interface Property {
 
 ## Crawler Project (Crawler/ Directory)
 
-### Required MCP Servers
+**Status**: ✅ **COMPLETE** - All crawling finished (2025-11-26)
 
-**CRITICAL**: The crawler project requires MCP (Model Context Protocol) servers for browser automation and research.
+### Final Statistics
+- **Total Properties**: 1,792 Haifa properties
+- **Total Images**: 27,585 downloaded
+- **Transaction History**: 17,664 records
+- **Schools**: 9,679 records
+- **Ratings**: 1,754 records
+- **Price Comparisons**: 3,772 records
+- **Construction Projects**: 30,499 records
 
-#### Chrome DevTools MCP (Primary - For Research)
-**Purpose**: AI-assisted website research and testing
+### Database
+- **Final Backup**: `Crawler/data/databases/final-backup-2025-11-26.duckdb.gz` (4.2MB)
+- **Active Database**: `Crawler/data/databases/properties.duckdb` (84MB)
 
-**Configuration** (add to Claude Code MCP settings):
-```json
-{
-  "mcpServers": {
-    "chrome-devtools": {
-      "command": "npx",
-      "args": ["chrome-devtools-mcp@latest"]
-    }
-  }
-}
-```
-
-**Verification**:
+### Quick Commands
 ```bash
-claude mcp list
-# Should show: chrome-devtools: ✓ Connected
+cd Crawler
+npx tsx src/scripts/count-images.ts        # Image statistics
+npx tsx src/scripts/check-table-counts.ts  # Table counts
 ```
 
-**Available Tools** (after restart):
-- `mcp__chrome-devtools__new_page` - Open new browser page
-- `mcp__chrome-devtools__navigate_page` - Navigate to URL
-- `mcp__chrome-devtools__take_screenshot` - Capture screenshots
-- `mcp__chrome-devtools__click` - Click elements
-- `mcp__chrome-devtools__evaluate_script` - Run JavaScript
-- `mcp__chrome-devtools__list_console_messages` - View console logs
+### Key Files
+- `Crawler/PROJECT-PLAN.md` - Project status (complete)
+- `Crawler/src/main.ts` - CLI entry point
+- `Crawler/src/crawlers/integratedCrawler.ts` - Main crawler
+- `Crawler/src/extractors/` - Data extractors (property, transaction, schools, etc.)
 
-#### Playwright MCP (Alternative)
-**Purpose**: Additional browser automation capabilities
+### Technology Stack
+- **Crawlee + Playwright** - Browser automation
+- **DuckDB** - Database
+- **TypeScript** - Type-safe development
 
-**Configuration**:
-```json
-{
-  "mcpServers": {
-    "chrome-devtools": {
-      "command": "npx",
-      "args": ["chrome-devtools-mcp@latest"]
-    },
-    "playwright": {
-      "command": "npx",
-      "args": ["@playwright/mcp@latest"]
-    }
-  }
-}
-```
-
-### MCP Setup Workflow
-
-**Before starting crawler work:**
-
-1. **Add MCP Configuration** (see above)
-2. **Restart Claude Code** completely
-3. **Verify Connection**:
-   ```bash
-   claude mcp list
-   ```
-4. **Test Tools**: Claude should be able to use `mcp__chrome-devtools__new_page`
-
-**If tools not available after restart:**
-- Check MCP server output for errors
-- Verify Node.js is installed (required for `npx`)
-- Try manual installation: `npm install -g chrome-devtools-mcp@latest`
-
-### Crawler Development Commands
-
-**From Crawler/ directory** (once Phase 2 complete):
-```bash
-npm install              # Install dependencies
-npm run crawl            # Run full crawl
-npm run crawl:test       # Test on 5-10 properties
-npm run export:json      # Export to JSON
-npm run analyze          # Run DuckDB analytics
-```
-
-### Crawler Project Status
-
-**📚 MASTER DOCUMENT**: See **`Crawler/PROJECT-PLAN.md`** - **START HERE FOR ALL SESSIONS**
-
-**✅ ACTIVE STATUS** (2025-10-31 18:05 - Extended Crawl Running):
-- **Current**: 1,787 properties in database ✅
-- **Session**: Phase 1 crawling pages 94-200 (extended from 106)
-- **Shell ID**: `94c60a` (active crawler)
-- **Success Rate**: 100% (no blocking detected)
-- **Target**: 3,600 total properties
-
-**🚨 CRITICAL - Session Resumption** (for Claude Code after computer restart):
-1. **FIRST**: Read `Crawler/PROJECT-PLAN.md` for exact latest status
-2. **Check database**: `cd Crawler && npx tsx src/scripts/check-table-counts.ts`
-   - Should show 1,787+ properties (growing as crawler runs)
-3. **Resume crawler with EXTENDED command**:
-   ```bash
-   cd Crawler
-   node dist/main.js --city חיפה --start-page 1 --max-pages 200 --max-properties 3600 --no-images
-   ```
-   - ✅ Smart resume: Will continue from last completed page
-   - ✅ Duplicate detection: Skips already-crawled properties
-   - ✅ Target: 3,600 total properties across 200 pages
-
-**Current Session Progress** (2025-10-31):
-- **Phase 1**: 🔄 In Progress (Pages 94-200, targeting ~1,800 total URLs)
-- **Previous Sessions**: 1,787 properties collected from pages 1-106
-- **Anti-Blocking**: Working perfectly (100% success rate)
-- **Duplicate Detection**: Working perfectly (skips already-crawled properties)
-- **Expected Runtime**: Crawler will run continuously until 3,600 properties or 200 pages complete
-
-**📖 Documentation**:
-- `Crawler/PROJECT-PLAN.md` - Master status document (read at every session start)
-- `Crawler/docs/PRD.md` - Product Requirements Document
+### Documentation
+- `Crawler/docs/PRD.md` - Product Requirements
 - `Crawler/docs/ANTI-BLOCKING.md` - Anti-blocking strategy
-- `Crawler/docs/SOLUTION-IMPLEMENTED.md` - Technical implementation
-- `Crawler/docs/RESEARCH.md` - Website structure research
 - `Crawler/docs/SCHEMA.md` - Database schema
-- `Crawler/docs/SCRAPING-TIMEOUTS.md` - Time estimates
-
-**💬 Monitoring Live Crawls**:
-When a production crawl is running, user can type **"status"** for compact updates:
-```
-X/TARGET complete (Z%) | ⏱️  Time elapsed | ✅ Success rate | ❌ Failures
-Rate: ~X.X properties/min | ETA: ~X hours
-```
-
----
-
-## Old Session Notes (Pre-2025-10-14)
-
-<details>
-<summary>Click to expand historical development notes</summary>
-
-**Note**: The details below are from earlier development sessions and are kept for historical reference only. For current status, always refer to `Crawler/PROJECT-PLAN.md`.
-
-**Session 2025-10-13 Afternoon**:
-1. ✅ **Fixed search results pagination** - Fresh browser per search page (not per property)
-   - **Problem**: PerimeterX blocked pagination even with 60-120s delays (reusing same browser session)
-   - **Solution**: Complete refactor to launch fresh browser for each search page
-   - **Architecture**: `createSinglePageCrawler()` + orchestrator loop with delays
-   - **Test Results**: 3 pages crawled with 102 URLs extracted (34+34+34), **0% blocking rate**
-   - **Config**: Added SEARCH_PAGE_DELAY_MIN/MAX environment variables (60-120s default)
-   - **Implementation**: `src/crawlers/searchCrawler.ts` (345 lines, complete rewrite)
-2. ✅ **Repository cleanup** - Removed temporary files and old test artifacts
-   - Deleted: `test-pagination.ts`, `check-backup.ts`, `debug-screenshots/`, `storage/`, old test scripts
-   - Kept: `schema-report-with-data.html`, `verify-database.ts`
-3. ✅ **Updated documentation** - CLAUDE.md git policy + PROJECT-PLAN.md streamlined
-
-**🎉 Major Achievement - Anti-Blocking Solution**:
-- **Solution**: Fresh browser per property with random delays (60-120s) + HEADLESS=false
-- **Test Results**: 100% success rate validated (100-property test: 34/34, HEADLESS test: 2/2)
-- **Status**: Production-ready with DuckDB-only architecture
-- **Implementation**: `src/crawlers/singleBrowserCrawler.ts`
-
-**Key Capabilities**:
-- ✅ 100% anti-blocking success rate - bypasses PerimeterX protection completely
-- ✅ **DuckDB-only architecture** - Simplified from dual SQLite+DuckDB to single database (Phase 5C)
-- ✅ **Manual ID generation** - Fixed DuckDB schema (removed sequences, using manual IDs)
-- ✅ **Enhanced extraction** (38+ fields + 11 amenities + panel data)
-- ✅ Image downloading with caching and retry logic
-- ✅ Resume capability (upserts existing properties, skips already-downloaded images)
-- ✅ **Live progress updates** (every 15 seconds) - Verified working
-- ✅ HTTP retry logic for server errors (520/502/503)
-
-**Production Scaling**:
-- **3000 properties**: 2-4 nights (sequential overnight batches, 500-1000/night)
-- **Performance**: ~0.4-0.7 property/minute with production delays (60-120s)
-- **Ready for deployment**: All systems verified and tested
-
-**Known Issues**:
-- ⚠️ **BLOB image storage**: Optimization needed for bulk image downloads (may hang on large batches)
-- **Workaround**: Can disable image downloads for initial large crawl, add images later in smaller batches
-
-**🚀 READY FOR PRODUCTION CRAWL (2025-10-11 Evening)**:
-
-**Pre-Production Checklist**:
-- ✅ Database cleaned (fresh start for production)
-- ✅ Schema report enhanced with intelligent column sampling
-- ✅ Anti-blocking verified (70% success with test delays, expect 80-90% with production 60-120s delays)
-- ✅ All Phase 5B extractors integrated and working
-
-**Production Crawling Workflow**:
-1. **Start Small**: Begin with 50-property test batch
-2. **Verify Database**: Check table counts after EACH batch
-3. **Stop if Issues**: If tables are empty or blocking detected, STOP and fix code
-4. **Incremental Scale**: 50 → 200 → 500 → full 3,600 properties
-
-**Database Verification Command** (run after each batch):
-```bash
-cd Crawler && npx ts-node src/scripts/check-table-counts.ts
-```
-
-**Expected Data Coverage** (at minimum):
-- ✅ **properties**: Should have records for all crawled properties
-- ✅ **neighborhood_ratings**: Most properties should have ratings (80%+)
-- ✅ **price_comparisons**: Most properties should have price data (80%+)
-- ⚠️ **transaction_history, schools, construction**: May be empty (not all properties have this data)
-- ❌ **property_images**: Will be empty if using --no-images flag
-
-**🚨 CRITICAL: Stop Crawling If**:
-- Properties table is empty after crawling
-- Success rate drops below 50%
-- Major blocking issues detected (403 errors, CAPTCHAs)
-
-**Schema Report**: [file:///C:/Src/Madlan/Crawler/tests/schema-report-with-data.html](file:///C:/Src/Madlan/Crawler/tests/schema-report-with-data.html)
-**Property Data Review**: [file:///C:/Src/Madlan/Crawler/tests/property-data-review.html](file:///C:/Src/Madlan/Crawler/tests/property-data-review.html)
-
-**Latest: Phase 5B Extractor Fixes (2025-10-11 Late Evening)**:
-- ✅ **Transaction Extractor Complete Rewrite** (`src/extractors/transactionExtractor.ts`):
-  - **Problem**: Was returning 0 results when 5+ transactions visible on page
-  - **Solution**: Complete rewrite with proper DOM traversal and bullet-point parsing
-  - **Key Changes**:
-    - Find "היסטוריית עסקאות" heading → walk up DOM to find container
-    - Parse row data by splitting on bullet points (•)
-    - Extract 8 fields using regex patterns (address, date, size, price/sqm, rooms, floor, year, price)
-  - **Result**: Now extracts 9 transactions with all fields correctly populated
-- ✅ **Schools Extractor HTML Structure Parsing** (`src/extractors/schoolsExtractor.ts`):
-  - **Problem**: School names were concatenating all text without proper field separation
-  - **Solution**: Parse HTML structure using CSS class selectors
-  - **Key Changes**:
-    - `.css-1wi4udx` → School name
-    - `.css-pewcrd` → Address
-    - `.css-1vf85xs` → Type and grades
-  - **Result**: 10 schools with clean separated fields (name: "מוריה", address: "מרדכי אנילביץ' 14, חיפה", type: "ממלכתי דתי", grades: "א-ו")
-- ✅ **Construction Projects Extractor Complete Rewrite** (`src/extractors/constructionExtractor.ts`) **(2025-10-12)**:
-  - **Problem**: Extractor was looking in wrong section - "בניה חדשה" h3 section is often empty
-  - **Root Cause**: Construction projects are in "פרויקטים חדשים בסביבה" (New Projects in the Area) section at bottom of page
-  - **Solution**: Complete rewrite to extract from project link cards
-  - **Key Changes**:
-    - Find all links with "חד׳" AND "קומות" AND city name
-    - Parse concatenated text using regex patterns
-    - Extract: project name, room range, floors, starting price, location
-    - Clean up "פרויקט חדש" prefix from names
-  - **Result**: Successfully extracting 70 projects from 9 properties (~7.8 per property)
-  - **✅ ALL 7 DATA SECTIONS NOW WORKING**: Properties, Transactions, Schools, Ratings, Price Comparisons, Construction Projects, Neighborhood Data
-- ✅ **Project Cleanup Complete**:
-  - Deleted all log files from root and `logs/` directory
-  - Removed old test scripts (kept only comprehensive versions)
-  - Deleted old Crawlee `storage/` directory (using DuckDB-only architecture)
-  - Generated comprehensive Hebrew RTL property data review page
-  - All Phase 5B extractors verified working with actual property data
-
-**Previous: Phase 5B Integration Test Results (2025-10-11 Afternoon)**:
-- ✅ **3-Property Test Crawl**: 3/3 success (100%)
-- ✅ **Phase 5B Data Extraction Working**:
-  - Neighborhood ratings: 2 records saved
-  - Price comparisons: 4 records saved (1+1+2 from 3 properties)
-  - Transaction history, schools, construction: No data available on these properties (normal - not all properties have this data)
-- ✅ **Repository Integration**: All 5 Phase 5B repositories working with manual ID generation
-- ✅ **Extractor Integration**: All extractors successfully integrated into main crawler
-- ✅ **TypeScript Compilation**: Build successful with all Phase 5B code
-- ✅ **Production Ready**: All enhanced data extraction working as expected
-
-**Recent Fixes & Updates (2025-10-11 Morning - DuckDB DateTime + Haifa Target)**:
-- ✅ **DuckDB DateTime Compatibility** - Fixed 4 critical bugs (SQLite → DuckDB migration):
-  - Fixed `CrawlSessionRepository.completeSession()`: `datetime('now')` → `CURRENT_TIMESTAMP`
-  - Fixed `CrawlSessionRepository.interruptSession()`: `datetime('now')` → `CURRENT_TIMESTAMP`
-  - Fixed `CrawlSessionRepository.deleteOldSessions()`: Fixed interval syntax
-  - Fixed `PropertyRepository.findStale()`: Fixed interval syntax
-- ✅ **Foreign Key Constraint Handling** - Wrapped session completion in try-catch blocks (graceful error handling)
-- ✅ **Schema Report Generation** - Created `tests/schema-report-with-data.html` with:
-  - Complete table/column documentation (135+ COMMENT statements)
-  - Sample data display from actual database
-  - Production deployment information
-- ✅ **Haifa Production Target** - Updated PROJECT-PLAN.md:
-  - Target: ~3,600 Haifa properties for sale
-  - Search URL: https://www.madlan.co.il/for-sale/%D7%97%D7%99%D7%A4%D7%94-%D7%99%D7%A9%D7%A8%D7%90%D7%9C?tracking_search_source=new_search&marketplace=residential
-  - All datetime fixes documented
-  - Ready for production deployment
-
-**Previous Updates (2025-10-11 Afternoon - Phase 5B Integration)**:
-- ✅ Phase 5B Integration: Integrated all Phase 5B extractors into main crawler
-- ✅ Fixed Manual ID Generation: Added getNextId() to 5 Phase 5B repositories (RatingsRepository, PriceComparisonRepository, ConstructionProjectsRepository, SchoolsRepository, TransactionHistoryRepository)
-- ✅ Repository Integration: All Phase 5B repositories integrated with DuckDB-only architecture
-- ✅ Extractor Integration: All extractors (transaction, schools, ratings, price comparison, construction) added to singleBrowserCrawler.ts
-- ✅ Testing Complete: 3-property test crawl with 100% success, Phase 5B data extraction verified
-- ✅ TypeScript Build: Successful compilation with all Phase 5B code
-
-**Previous Updates (2025-10-10 Evening)**:
-- ✅ Phase 5C: Removed SQLite support (DuckDB-only architecture)
-- ✅ Fixed DuckDB schema (removed sequences, using manual ID generation)
-- ✅ Updated all repositories for manual ID generation
-- ✅ Verified monitoring capabilities (progress updates, logging, session tracking)
-- ✅ Verified resume capability (upserts properties, skips images)
-- ✅ Cleaned up Crawler directory (removed obsolete files, logs, storage)
-
-**📖 Complete Documentation**:
-- **`Crawler/PROJECT-PLAN.md`** - **START HERE** - Master plan with session continuity, breakthrough details, and next steps
-- `Crawler/docs/SOLUTION-IMPLEMENTED.md` - Technical implementation details
-- `Crawler/docs/ANTI-BLOCKING.md` - Anti-blocking strategy documentation
-- `Crawler/docs/SCRAPING-TIMEOUTS.md` - **NEW**: Comprehensive timeout documentation and time estimates
-- `Crawler/tests/enhanced-quality-report.html` - **NEW**: Enhanced quality report with DuckDB schema
-- `Crawler/docs/PRD.md` - Product Requirements Document
-- `Crawler/docs/RESEARCH.md` - Website structure research
-
-**💬 Monitoring Live Crawls**:
-When a production crawl is running, the user can type **"status"** for a compact progress update:
-```
-[N]/34 complete (X%) | ⏱️ Xm elapsed | ✅ 100% success | ❌ 0 failed
-Now: Property N
-Rate: ~0.47 properties/min | Remaining: ~Xm | Finish ETA: ~HH:MM
-```
-This provides quick, non-intrusive updates without verbose logs.</details>
